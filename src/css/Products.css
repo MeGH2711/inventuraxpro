@@ -1,0 +1,107 @@
+.product-card {
+    border: 1px solid #edf2f7 !important;
+    background: #ffffff;
+    border-radius: 24px !important;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    height: 100%;
+    border: none;
+}
+
+.product-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(10, 47, 79, 0.12) !important;
+    border-color: rgba(10, 47, 79, 0.1) !important;
+}
+
+.product-name {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    color: var(--mainThemeColor);
+    font-size: 1.15rem;
+    line-height: 1.3;
+}
+
+.category-tag {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    color: var(--mainThemeColorLighterShade);
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* Pricing Section */
+.price-section {
+    background: rgba(19, 85, 141, 0.05);
+    padding: 12px 20px;
+    border-radius: 16px;
+    margin: 15px 0;
+}
+
+.price-label {
+    font-size: 0.75rem;
+    color: #718096;
+    display: block;
+}
+
+.price-amount {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 750;
+    color: var(--mainThemeColor);
+}
+
+.product-actions {
+    display: flex;
+    gap: 10px;
+    padding: 0 20px 20px 20px;
+}
+
+.btn-edit-action {
+    background-color: var(--mainThemeColor) !important;
+    color: white !important;
+    border-radius: 12px !important;
+    flex-grow: 1;
+    font-weight: 600 !important;
+    border: none !important;
+}
+
+.btn-delete-action {
+    background-color: #fff5f5 !important;
+    color: #e53e3e !important;
+    border-radius: 12px !important;
+    width: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #fed7d7 !important;
+}
+
+.product-table thead th {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.65rem !important;
+    letter-spacing: 1px;
+    padding: 18px 10px !important;
+    background-color: #f8f9fa !important;
+}
+
+.badge-category-table {
+    background-color: rgba(10, 47, 79, 0.08);
+    color: var(--mainThemeColor);
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.drawer-modern {
+    width: 420px !important;
+}
+
+.drawer-modern .offcanvas-header {
+    border-bottom: 1px solid #f8f9fa;
+    padding: 30px;
+}

@@ -1,0 +1,142 @@
+@font-face {
+  font-family: 'Montserrat';
+  src: url('../fonts/Montserrat-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Widths */
+.w-10 {
+  width: 10%;
+}
+
+.w-20 {
+  width: 20%;
+}
+
+.w-30 {
+  width: 30%;
+}
+
+.w-35 {
+  width: 35%;
+}
+
+.w-40 {
+  width: 40%;
+}
+
+/* Fonts */
+.font-montserrat {
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Toggle Password Button */
+#togglePassword {
+  border-top-right-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Main Page Content */
+#mainPageContent {
+  margin-left: 250px;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+#sidebar-wrapper.collapsed~#mainPageContent {
+  margin-left: 80px;
+}
+
+/* Profile Button */
+.profileButton ul {
+  padding: 1.5px 0 !important;
+}
+
+.profileButton ul li a {
+  transition: all 0.1s ease-in-out;
+}
+
+/* Global Card Typography (Excluding Products) */
+.gradient-card .card-title,
+.gradient-card3 .card-title {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.dashboardCardTitle {
+  font-weight: 700;
+}
+
+.dashboardCardText {
+  font-weight: 300;
+}
+
+.dailyStatsHeader h5,
+.latestProductsHeader h5,
+.latestBillsHeader h5 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Rounded Table Corner */
+.roundedTable {
+  margin-bottom: 0 !important;
+}
+
+.roundedTable thead tr:first-child {
+  border-top: 0;
+}
+
+.roundedTable tbody tr:last-child {
+  border-bottom: 0;
+}
+
+/* Modal */
+.modal-faded {
+  filter: brightness(40%);
+  pointer-events: none;
+}
+
+.modal-xxl {
+  max-width: 95vw;
+}
+
+/* Highlighted Text */
+.highlightedText {
+  padding: 0 1px;
+  border-radius: 2px;
+}
+
+/* Page Headers */
+.pageHeader {
+  font-size: 2rem;
+  font-weight: bold;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Notepad Editor */
+#editor code {
+  background: #eee;
+  font-family: monospace;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+/* Final Total Box Billing Page */
+#finalTotalFixedBox {
+  position: fixed;
+  bottom: 61px;
+  right: 0;
+  z-index: 1050;
+  font-size: 14px;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
