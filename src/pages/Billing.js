@@ -2,12 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../firebaseConfig';
 import {
     collection, getDocs, query, orderBy,
-    addDoc, doc, runTransaction, serverTimestamp, getDoc
+    addDoc, serverTimestamp, getCountFromServer, doc, getDoc
 } from 'firebase/firestore';
-import { Form, Button, Card, Row, Col, Table, ListGroup, Toast, ToastContainer } from 'react-bootstrap';
-import { MdDelete, MdReceipt, MdPerson, MdLocalShipping, MdSearch, MdChevronRight, MdChevronLeft } from 'react-icons/md';
+import { Form, Button, Card, Row, Col, Table, ListGroup, Toast, ToastContainer, Modal } from 'react-bootstrap';
+import {
+    MdDelete, MdReceipt, MdPerson, MdLocalShipping, MdSearch,
+    MdChevronRight, MdChevronLeft, MdFileDownload, MdSave, MdMessage
+} from 'react-icons/md';
+
+// Import the external designer PDF utility
+import { generateInvoice } from '../utils/generateInvoice';
 
 const Billing = () => {
+    // Core Logic States
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -15,10 +22,18 @@ const Billing = () => {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [overallDiscount, setOverallDiscount] = useState(0);
     const [loading, setLoading] = useState(false);
-    const [nextBillNumber, setNextBillNumber] = useState('...'); // State for the Bill ID display
-    const [toast, setToast] = useState({ show: false, message: '', bg: 'success' });
-    const suggestionRef = useRef(null);
+    const [nextBillNumber, setNextBillNumber] = useState('...');
 
+    // Local state for the editable Grand Total to prevent cursor jumping
+    const [manualTotal, setManualTotal] = useState("");
+
+    // Company & Modal States
+    const [companyInfo, setCompanyInfo] = useState(null);
+    const [showPostSaveModal, setShowPostSaveModal] = useState(false);
+    const [lastSavedBill, setLastSavedBill] = useState(null);
+    const [toast, setToast] = useState({ show: false, message: '', bg: 'success' });
+
+    const suggestionRef = useRef(null);
     const [isTotalExpanded, setIsTotalExpanded] = useState(true);
 
     const [billingData, setBillingData] = useState({
@@ -31,20 +46,25 @@ const Billing = () => {
         paymentMode: 'UPI'
     });
 
+    // Fetch initial data
     useEffect(() => {
         const fetchInitialData = async () => {
-            // Fetch Products
-            const q = query(collection(db, "products"), orderBy("name"));
-            const snapshot = await getDocs(q);
-            setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            try {
+                const companyRef = doc(db, "settings", "company");
+                const companySnap = await getDoc(companyRef);
+                if (companySnap.exists()) {
+                    setCompanyInfo(companySnap.data());
+                }
 
-            // Fetch Current Bill Number for display
-            const counterRef = doc(db, "settings", "billCounter");
-            const counterSnap = await getDoc(counterRef);
-            if (counterSnap.exists()) {
-                setNextBillNumber(counterSnap.data().lastBillNumber + 1);
-            } else {
-                setNextBillNumber(1);
+                const q = query(collection(db, "products"), orderBy("name"));
+                const snapshot = await getDocs(q);
+                setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+                const coll = collection(db, "bills");
+                const snapshotCount = await getCountFromServer(coll);
+                setNextBillNumber(snapshotCount.data().count + 1);
+            } catch (error) {
+                console.error("Error fetching initial data:", error);
             }
         };
         fetchInitialData();
@@ -58,6 +78,16 @@ const Billing = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Derived Calculations
+    const subTotal = cart.reduce((acc, item) => acc + item.discountedTotal, 0);
+    const finalCalculatedTotal = subTotal - (subTotal * (overallDiscount / 100));
+
+    // Keep the manual input field in sync with calculations when items change
+    useEffect(() => {
+        setManualTotal(finalCalculatedTotal.toFixed(2));
+    }, [finalCalculatedTotal]);
+
+    // Search and Cart Logic
     const handleSearch = (e) => {
         const value = e.target.value;
         setSearchTerm(value);
@@ -96,9 +126,31 @@ const Billing = () => {
         setCart(updatedCart);
     };
 
-    const subTotal = cart.reduce((acc, item) => acc + item.discountedTotal, 0);
-    const finalCalculatedTotal = subTotal - (subTotal * (overallDiscount / 100));
+    // LOGIC: Handle manual editing of the Grand Total
+    const handleManualTotalChange = (inputValue) => {
+        setManualTotal(inputValue); // Update text immediately for smooth typing
 
+        const value = parseFloat(inputValue);
+        if (!isNaN(value) && subTotal > 0) {
+            // Calculate required discount % to match the typed total
+            const newDiscountPercent = ((subTotal - value) / subTotal) * 100;
+            setOverallDiscount(parseFloat(newDiscountPercent.toFixed(2)));
+        }
+    };
+
+    // Helper for PDF generation
+    const downloadInvoicePDF = (billNum, bData, currentCart, sTotal, oDisc, fTotal) => {
+        generateInvoice({
+            nextBillNumber: billNum,
+            billingData: bData,
+            cart: currentCart,
+            subTotal: sTotal,
+            overallDiscount: oDisc,
+            finalCalculatedTotal: fTotal
+        }, companyInfo);
+    };
+
+    // Save transaction
     const handleCompleteTransaction = async () => {
         if (cart.length === 0) {
             setToast({ show: true, message: 'Please add products to the bill.', bg: 'danger' });
@@ -107,18 +159,9 @@ const Billing = () => {
 
         setLoading(true);
         try {
-            const billNumber = await runTransaction(db, async (transaction) => {
-                const counterRef = doc(db, "settings", "billCounter");
-                const counterSnap = await transaction.get(counterRef);
-
-                let nextNumber = 1;
-                if (counterSnap.exists()) {
-                    nextNumber = counterSnap.data().lastBillNumber + 1;
-                }
-
-                transaction.set(counterRef, { lastBillNumber: nextNumber }, { merge: true });
-                return nextNumber;
-            });
+            const coll = collection(db, "bills");
+            const snapshotCount = await getCountFromServer(coll);
+            const billNumber = snapshotCount.data().count + 1;
 
             const billSchema = {
                 billNumber: billNumber,
@@ -133,7 +176,6 @@ const Billing = () => {
                     name: item.name,
                     quantity: item.qty,
                     unitPrice: item.price,
-                    originalTotal: item.total,
                     discount: item.discount,
                     discountedTotal: item.discountedTotal
                 })),
@@ -141,15 +183,25 @@ const Billing = () => {
                 overallDiscount: overallDiscount,
                 finalTotal: finalCalculatedTotal,
                 createdAt: serverTimestamp(),
-                __v: 0
             };
 
             await addDoc(collection(db, "bills"), billSchema);
+
+            setLastSavedBill({
+                billNumber,
+                billingData: { ...billingData },
+                cart: [...cart],
+                subTotal,
+                overallDiscount,
+                finalCalculatedTotal
+            });
+
             setToast({ show: true, message: `Bill #${billNumber} saved successfully!`, bg: 'success' });
+            setShowPostSaveModal(true);
 
             setCart([]);
             setOverallDiscount(0);
-            setNextBillNumber(billNumber + 1); // Update for next transaction
+            setNextBillNumber(billNumber + 1);
             setBillingData({
                 ...billingData,
                 customerName: '',
@@ -166,6 +218,14 @@ const Billing = () => {
         }
     };
 
+    const openWhatsApp = () => {
+        if (lastSavedBill?.billingData?.contactNumber) {
+            const number = lastSavedBill.billingData.contactNumber.replace(/\D/g, '');
+            const message = `Hello ${lastSavedBill.billingData.customerName}, thank you for your purchase at ${companyInfo?.brandName || "De Baker's & More"}! Your bill total is ₹${lastSavedBill.finalCalculatedTotal.toFixed(2)}.`;
+            window.open(`https://wa.me/91${number}?text=${encodeURIComponent(message)}`, '_blank');
+        }
+    };
+
     return (
         <div className="container-fluid py-4">
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -173,19 +233,12 @@ const Billing = () => {
                     <h2 className="pageHeader mb-1">Create New Bill</h2>
                     <p className="text-muted small mb-0">Generate and print customer invoices.</p>
                 </div>
-
-                {/* Header Actions: Bill Number Text & Action Button */}
                 <div className="d-flex align-items-center gap-3">
                     <div className="bg-light px-3 py-2 rounded-3 border d-flex align-items-center shadow-sm">
                         <span className="small fw-bold text-muted text-uppercase me-2">Bill No:</span>
                         <span className="fw-bold text-dark">{nextBillNumber}</span>
                     </div>
-                    <Button
-                        variant="darkblue"
-                        className="px-4 py-2 shadow-sm"
-                        onClick={handleCompleteTransaction}
-                        disabled={loading}
-                    >
+                    <Button variant="dark" className="px-4 py-2 shadow-sm" onClick={handleCompleteTransaction} disabled={loading}>
                         <MdReceipt className="me-2" /> {loading ? 'Saving...' : 'Complete Transaction'}
                     </Button>
                 </div>
@@ -195,32 +248,18 @@ const Billing = () => {
                 <Col lg={4}>
                     <Card className="border-0 shadow-sm rounded-4 mb-4">
                         <Card.Body className="p-4">
-                            <div className="fw-bold text-muted small mb-3">
-                                <MdPerson className="me-2" /> CUSTOMER DETAILS
-                            </div>
+                            <div className="fw-bold text-muted small mb-3"><MdPerson className="me-2" /> CUSTOMER DETAILS</div>
                             <Form.Group className="mb-3">
                                 <Form.Label className="small fw-bold text-muted">NAME</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    value={billingData.customerName}
-                                    onChange={(e) => setBillingData({ ...billingData, customerName: e.target.value })}
-                                />
+                                <Form.Control type="text" value={billingData.customerName} onChange={(e) => setBillingData({ ...billingData, customerName: e.target.value })} />
                             </Form.Group>
                             <Form.Group className="mb-3">
                                 <Form.Label className="small fw-bold text-muted">CONTACT NUMBER</Form.Label>
-                                <Form.Control
-                                    type="tel"
-                                    value={billingData.contactNumber}
-                                    onChange={(e) => setBillingData({ ...billingData, contactNumber: e.target.value })}
-                                />
+                                <Form.Control type="tel" value={billingData.contactNumber} onChange={(e) => setBillingData({ ...billingData, contactNumber: e.target.value })} />
                             </Form.Group>
                             <Form.Group className="mb-3">
                                 <Form.Label className="small fw-bold text-muted">ADDRESS</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    value={billingData.customerAddress}
-                                    onChange={(e) => setBillingData({ ...billingData, customerAddress: e.target.value })}
-                                />
+                                <Form.Control type="text" value={billingData.customerAddress} onChange={(e) => setBillingData({ ...billingData, customerAddress: e.target.value })} />
                             </Form.Group>
                             <Row>
                                 <Col md={6}><Form.Group className="mb-3"><Form.Label className="small fw-bold text-muted">DATE</Form.Label><Form.Control type="date" value={billingData.billingDate} readOnly /></Form.Group></Col>
@@ -271,28 +310,59 @@ const Billing = () => {
                             </div>
                         </Card.Header>
                         <Card.Body className="p-0">
-                            <Table responsive bordered hover className="mb-0 product-table align-middle text-center">
-                                <thead className="bg-light"><tr className="small text-uppercase"><th>Product Name</th><th style={{ width: '100px' }}>Quantity</th><th>Price (per unit)</th><th>Total</th><th style={{ width: '100px' }}>Discount (%)</th><th style={{ width: '160px' }}>Discounted Total</th><th className="text-center">Action</th></tr></thead>
+                            <Table responsive bordered hover className="mb-0 align-middle text-center">
+                                <thead className="bg-light text-uppercase small">
+                                    <tr><th>Product Name</th><th style={{ width: '100px' }}>Qty</th><th>Price</th><th>Total</th><th style={{ width: '100px' }}>Disc %</th><th>Final</th><th className="text-center">Action</th></tr>
+                                </thead>
                                 <tbody>
                                     {cart.map((item, index) => (
                                         <tr key={item.tempId}>
-                                            <td className="ps-4 text-start"><div className="fw-bold">{item.name}</div></td>
-                                            <td><Form.Control size="sm" type="number" value={item.qty} onChange={(e) => updateItemProperty(index, 'qty', e.target.value)} className="shadow-none text-center fw-bold" /></td>
+                                            <td className="ps-4 text-start fw-bold">{item.name}</td>
+                                            <td><Form.Control size="sm" type="number" value={item.qty} onChange={(e) => updateItemProperty(index, 'qty', e.target.value)} className="text-center" /></td>
                                             <td>{item.price.toFixed(2)}</td>
                                             <td>{item.total.toFixed(2)}</td>
-                                            <td><Form.Control size="sm" type="number" value={item.discount} onChange={(e) => updateItemProperty(index, 'discount', e.target.value)} className="shadow-none text-center" /></td>
-                                            <td className="p-1"><Form.Control size="sm" readOnly value={item.discountedTotal.toFixed(2)} className="bg-white text-center border-0 fw-bold" /></td>
+                                            <td><Form.Control size="sm" type="number" value={item.discount} onChange={(e) => updateItemProperty(index, 'discount', e.target.value)} className="text-center" /></td>
+                                            <td className="fw-bold">{item.discountedTotal.toFixed(2)}</td>
                                             <td className="text-center"><Button variant="link" className="text-danger p-0" onClick={() => setCart(cart.filter(c => c.tempId !== item.tempId))}><MdDelete size={18} /></Button></td>
                                         </tr>
                                     ))}
                                     {cart.length === 0 && (
-                                        <tr><td colSpan="7" className="text-center py-5 text-muted">Start adding products to create a bill.</td></tr>
+                                        <tr><td colSpan="7" className="text-center py-5 text-muted">Cart is empty. Search products above.</td></tr>
                                     )}
                                 </tbody>
                                 <tfoot className="fw-bold bg-light">
-                                    <tr><td colSpan="5" className="text-end py-2">Total</td><td className="py-2 text-center">{subTotal.toFixed(2)}</td><td></td></tr>
-                                    <tr><td colSpan="5" className="text-end py-2">Overall Discount (%)</td><td className="p-1"><Form.Control size="sm" type="number" className="text-center shadow-none fw-bold" value={overallDiscount} onChange={(e) => setOverallDiscount(parseFloat(e.target.value) || 0)} /></td><td></td></tr>
-                                    <tr><td colSpan="5" className="text-end py-2">Final Total (After Discount)</td><td className="p-1"><Form.Control size="sm" readOnly className="text-center shadow-none fw-bold bg-white" value={finalCalculatedTotal.toFixed(2)} /></td><td></td></tr>
+                                    <tr>
+                                        <td colSpan="5" className="text-end py-2">Subtotal</td>
+                                        <td className="py-2">{subTotal.toFixed(2)}</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td colSpan="5" className="text-end py-2">Overall Discount (%)</td>
+                                        <td>
+                                            <Form.Control
+                                                size="sm"
+                                                type="number"
+                                                className="text-center"
+                                                value={overallDiscount}
+                                                onChange={(e) => setOverallDiscount(parseFloat(e.target.value) || 0)}
+                                            />
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td colSpan="5" className="text-end py-2 text-primary fs-5">Grand Total</td>
+                                        <td className="py-2">
+                                            <Form.Control
+                                                size="sm"
+                                                type="number"
+                                                className="text-center fw-bold text-primary fs-5"
+                                                value={manualTotal}
+                                                onChange={(e) => handleManualTotalChange(e.target.value)}
+                                                style={{ border: '1px solid #0d6efd', background: '#f0f7ff' }}
+                                            />
+                                        </td>
+                                        <td></td>
+                                    </tr>
                                 </tfoot>
                             </Table>
                         </Card.Body>
@@ -300,23 +370,16 @@ const Billing = () => {
 
                     <div
                         id="finalTotalFixedBox"
-                        className={`p-3 shadow-lg d-flex align-items-center gap-3 text-white transition-all`}
+                        className="p-3 shadow-lg d-flex align-items-center gap-3 text-white transition-all"
                         style={{
                             transform: isTotalExpanded ? 'translateX(0)' : 'translateX(calc(100% - 50px))',
                             transition: 'transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
                             cursor: 'default'
                         }}
                     >
-                        {/* Toggle Button on the Left */}
-                        <Button
-                            variant="link"
-                            className="text-white p-0 border-0 shadow-none"
-                            onClick={() => setIsTotalExpanded(!isTotalExpanded)}
-                        >
+                        <Button variant="link" className="text-white p-0" onClick={() => setIsTotalExpanded(!isTotalExpanded)}>
                             {isTotalExpanded ? <MdChevronRight size={30} /> : <MdChevronLeft size={30} />}
                         </Button>
-
-                        {/* Content Group - wrapped to handle visibility if needed, or kept for layout */}
                         <div className="d-flex align-items-center gap-4">
                             <div className="text-end">
                                 <div className="small opacity-75">ITEMS: {cart.length}</div>
@@ -325,12 +388,47 @@ const Billing = () => {
                             <div style={{ width: '2px', height: '40px', background: 'rgba(255,255,255,0.2)' }}></div>
                             <div>
                                 <span className="small d-block opacity-75">GRAND TOTAL</span>
-                                <span className="fs-3 fw-bold">₹ {finalCalculatedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                <span className="fs-3 fw-bold">₹{finalCalculatedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                             </div>
                         </div>
                     </div>
                 </Col>
             </Row>
+
+            <Modal show={showPostSaveModal} onHide={() => setShowPostSaveModal(false)} centered backdrop="static">
+                <Modal.Header closeButton className="border-0 pt-4 px-4">
+                    <Modal.Title className="fw-bold">Transaction Successful</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="px-4 pb-4 text-center">
+                    <div className="mb-4">
+                        <div className="text-success display-4 mb-2">₹{lastSavedBill?.finalCalculatedTotal.toFixed(2)}</div>
+                        <p className="text-muted">Bill #<strong>{lastSavedBill?.billNumber}</strong> has been saved.</p>
+                    </div>
+                    <div className="d-grid gap-3">
+                        <Button
+                            variant="primary" size="lg" className="py-3 shadow-sm"
+                            onClick={() => downloadInvoicePDF(
+                                lastSavedBill.billNumber, lastSavedBill.billingData, lastSavedBill.cart,
+                                lastSavedBill.subTotal, lastSavedBill.overallDiscount, lastSavedBill.finalCalculatedTotal
+                            )}
+                        >
+                            <MdFileDownload className="me-2" /> Download & Print Invoice
+                        </Button>
+                        <div className="row g-2">
+                            <div className="col-6">
+                                <Button variant="outline-dark" className="w-100 py-2" onClick={() => setShowPostSaveModal(false)}>
+                                    <MdSave className="me-2" /> Save & Close
+                                </Button>
+                            </div>
+                            <div className="col-6">
+                                <Button variant="success" className="w-100 py-2" onClick={openWhatsApp}>
+                                    <MdMessage className="me-2" /> WhatsApp
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </Modal.Body>
+            </Modal>
 
             <ToastContainer position="top-end" className="p-3">
                 <Toast show={toast.show} bg={toast.bg} onClose={() => setToast({ ...toast, show: false })} delay={3000} autohide>
