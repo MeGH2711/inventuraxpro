@@ -134,20 +134,23 @@ const Products = () => {
                         <option value="">All Categories</option>
                         {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
                     </Form.Select>
-                    <div className="btn-group btn-group-sm">
+                    {/* View Mode Toggle */}
+                    <div className="btn-group shadow-sm" role="group" style={{ borderRadius: '12px', overflow: 'hidden' }}>
                         <Button
                             variant={viewMode === 'card' ? 'darkblue' : 'outline-darkblue'}
                             onClick={() => setViewMode('card')}
-                            className='btn btn-sm'
+                            className="px-3 border-0"
+                            style={{ borderRadius: '0' }}
                         >
-                            <MdViewModule />
+                            <MdViewModule size={20} />
                         </Button>
                         <Button
                             variant={viewMode === 'table' ? 'darkblue' : 'outline-darkblue'}
                             onClick={() => setViewMode('table')}
-                            className='btn btn-sm'
+                            className="px-3 border-0"
+                            style={{ borderRadius: '0' }}
                         >
-                            <MdViewList />
+                            <MdViewList size={20} />
                         </Button>
                     </div>
                 </div>

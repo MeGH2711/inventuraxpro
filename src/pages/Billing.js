@@ -5,7 +5,7 @@ import {
     addDoc, doc, runTransaction, serverTimestamp, getDoc
 } from 'firebase/firestore';
 import { Form, Button, Card, Row, Col, Table, ListGroup, Toast, ToastContainer } from 'react-bootstrap';
-import { MdDelete, MdReceipt, MdPerson, MdLocalShipping, MdSearch, MdNumbers } from 'react-icons/md';
+import { MdDelete, MdReceipt, MdPerson, MdLocalShipping, MdSearch, MdChevronRight, MdChevronLeft } from 'react-icons/md';
 
 const Billing = () => {
     const [products, setProducts] = useState([]);
@@ -18,6 +18,8 @@ const Billing = () => {
     const [nextBillNumber, setNextBillNumber] = useState('...'); // State for the Bill ID display
     const [toast, setToast] = useState({ show: false, message: '', bg: 'success' });
     const suggestionRef = useRef(null);
+
+    const [isTotalExpanded, setIsTotalExpanded] = useState(true);
 
     const [billingData, setBillingData] = useState({
         customerName: '',
@@ -296,15 +298,35 @@ const Billing = () => {
                         </Card.Body>
                     </Card>
 
-                    <div id="finalTotalFixedBox" className="p-3 shadow-lg d-flex align-items-center gap-4 text-white">
-                        <div className="text-end">
-                            <div className="small opacity-75">ITEMS: {cart.length}</div>
-                            <div className="small opacity-75">TOTAL QTY: {cart.reduce((a, b) => a + b.qty, 0)}</div>
-                        </div>
-                        <div style={{ width: '2px', height: '40px', background: 'rgba(255,255,255,0.2)' }}></div>
-                        <div>
-                            <span className="small d-block opacity-75">GRAND TOTAL</span>
-                            <span className="fs-3 fw-bold">₹ {finalCalculatedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <div
+                        id="finalTotalFixedBox"
+                        className={`p-3 shadow-lg d-flex align-items-center gap-3 text-white transition-all`}
+                        style={{
+                            transform: isTotalExpanded ? 'translateX(0)' : 'translateX(calc(100% - 50px))',
+                            transition: 'transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
+                            cursor: 'default'
+                        }}
+                    >
+                        {/* Toggle Button on the Left */}
+                        <Button
+                            variant="link"
+                            className="text-white p-0 border-0 shadow-none"
+                            onClick={() => setIsTotalExpanded(!isTotalExpanded)}
+                        >
+                            {isTotalExpanded ? <MdChevronRight size={30} /> : <MdChevronLeft size={30} />}
+                        </Button>
+
+                        {/* Content Group - wrapped to handle visibility if needed, or kept for layout */}
+                        <div className="d-flex align-items-center gap-4">
+                            <div className="text-end">
+                                <div className="small opacity-75">ITEMS: {cart.length}</div>
+                                <div className="small opacity-75">TOTAL QTY: {cart.reduce((a, b) => a + b.qty, 0)}</div>
+                            </div>
+                            <div style={{ width: '2px', height: '40px', background: 'rgba(255,255,255,0.2)' }}></div>
+                            <div>
+                                <span className="small d-block opacity-75">GRAND TOTAL</span>
+                                <span className="fs-3 fw-bold">₹ {finalCalculatedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            </div>
                         </div>
                     </div>
                 </Col>
