@@ -1,19 +1,29 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 
 // Pages
-
 import Login from "./pages/Login";
 import Products from "./pages/Products";
 import CompanyDetails from "./pages/CompanyDetails";
+import Billing from "./pages/Billing";
 
 import './css/style.css';
 import './css/lightTheme.css';
 
 const Dashboard = () => <div className="p-4"><h1>Dashboard Page</h1></div>;
+
+// 1. Create a Layout component to keep Sidebar persistent
+const Layout = ({ children }) => (
+  <div className="d-flex">
+    <Sidebar />
+    <div id="mainPageContent" className="flex-grow-1">
+      {children}
+    </div>
+  </div>
+);
 
 function App() {
   return (
@@ -21,46 +31,25 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Login />} />
+
+          {/* 2. Wrap all protected routes in a way that Sidebar stays put */}
           <Route
-            path="/dashboard"
+            path="/*"
             element={
               <PrivateRoute>
-                <div className="d-flex">
-                  <Sidebar />
-                  <div id="mainPageContent" className="flex-grow-1">
-                    <Dashboard />
-                  </div>
-                </div>
+                <Layout>
+                  <Routes>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/products" element={<Products />} />
+                    <Route path="/companydetails" element={<CompanyDetails />} />
+                    <Route path="/billing" element={<Billing />} />
+                    
+                    <Route path="/" element={<Navigate to="/dashboard" />} />
+                  </Routes>
+                </Layout>
               </PrivateRoute>
             }
           />
-          <Route
-            path="/products"
-            element={
-              <PrivateRoute>
-                <div className="d-flex">
-                  <Sidebar />
-                  <div id="mainPageContent" className="flex-grow-1">
-                    <Products />
-                  </div>
-                </div>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/companydetails"
-            element={
-              <PrivateRoute>
-                <div className="d-flex">
-                  <Sidebar />
-                  <div id="mainPageContent" className="flex-grow-1">
-                    <CompanyDetails />
-                  </div>
-                </div>
-              </PrivateRoute>
-            }
-          />
-          {/* Add other protected routes here */}
         </Routes>
       </Router>
     </AuthProvider>

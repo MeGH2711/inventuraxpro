@@ -109,10 +109,10 @@ const Products = () => {
             {/* Action Bar */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div className="d-flex gap-2">
-                    <Button variant="darkblue" onClick={() => { setEditProduct(null); setShowProductDrawer(true); }}>
+                    <Button variant="darkblue" className='btn btn-sm' onClick={() => { setEditProduct(null); setShowProductDrawer(true); }}>
                         <MdAdd /> Add Product
                     </Button>
-                    <Button variant="outline-darkblue" onClick={() => setShowCategoryDrawer(true)}>
+                    <Button variant="outline-darkblue" className='btn btn-sm' onClick={() => setShowCategoryDrawer(true)}>
                         <MdCategory /> Categories
                     </Button>
                 </div>
@@ -138,12 +138,14 @@ const Products = () => {
                         <Button
                             variant={viewMode === 'card' ? 'darkblue' : 'outline-darkblue'}
                             onClick={() => setViewMode('card')}
+                            className='btn btn-sm'
                         >
                             <MdViewModule />
                         </Button>
                         <Button
                             variant={viewMode === 'table' ? 'darkblue' : 'outline-darkblue'}
                             onClick={() => setViewMode('table')}
+                            className='btn btn-sm'
                         >
                             <MdViewList />
                         </Button>
