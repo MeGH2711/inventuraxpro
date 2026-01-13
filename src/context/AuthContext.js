@@ -1,3 +1,5 @@
+// context/AuthContext.js
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { auth } from "../firebaseConfig";
 import {
@@ -15,26 +17,41 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
+            if (currentUser) {
+                // SESSION TIMER LOGIC
+                const loginTime = localStorage.getItem("login_timestamp");
+                const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000; // 172,800,000 ms
+
+                if (loginTime && (Date.now() - parseInt(loginTime) > TWO_DAYS_MS)) {
+                    // Session expired
+                    handleLogout();
+                    setUser(null);
+                } else {
+                    setUser(currentUser);
+                }
+            } else {
+                setUser(null);
+            }
             setLoading(false);
         });
         return () => unsubscribe();
     }, []);
-    
+
     const loginWithGoogle = () => {
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
         return signInWithPopup(auth, provider);
     };
 
-    const logout = () => {
+    const handleLogout = () => {
+        localStorage.removeItem("login_timestamp"); // Clear timer
         return signOut(auth);
     };
 
     const value = {
         user,
         loginWithGoogle,
-        logout
+        logout: handleLogout
     };
 
     return (
@@ -44,5 +61,4 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-// Custom hook to use authentication anywhere in the app
 export const useAuth = () => useContext(AuthContext);

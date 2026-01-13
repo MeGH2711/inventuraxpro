@@ -91,3 +91,46 @@
     background-color: rgba(255, 255, 255, 0.3);
     border-radius: 10px;
 }
+
+/* Align the footer with the top border you have in your toggle section */
+.sidebar-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: auto;
+    /* Pushes it to the bottom */
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    width: calc(100% - 20px);
+    /* Matches your NavLink margins */
+    padding: 12px 20px;
+    background-color: transparent;
+    /* Fixes the solid red issue */
+    color: var(--white);
+    border: none;
+    margin: 10px;
+    /* Aligns with navigation items */
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Hover effect: Changes to red for visibility */
+.logout-btn:hover {
+    background-color: #d93025 !important;
+    /* Soft red danger color */
+    color: white !important;
+}
+
+/* Fix for Collapsed State alignment */
+#sidebar-wrapper.collapsed .logout-btn {
+    justify-content: center;
+    padding: 12px 0;
+    margin: 10px 8px;
+    width: calc(100% - 16px);
+}
+
+#sidebar-wrapper.collapsed .logout-btn .link-text {
+    display: none;
+}

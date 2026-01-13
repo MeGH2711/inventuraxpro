@@ -39,24 +39,21 @@ const Login = () => {
             const result = await loginWithGoogle();
             const email = result.user.email;
 
-            // 1. Reference the document in 'authorized_users' using the email as ID
             const userRef = doc(db, "authorized_users", email);
-
-            // 2. Verify if the email exists in your whitelist
             const userSnap = await getDoc(userRef);
 
             if (userSnap.exists()) {
-                // SUCCESS: The user is authorized
+                // SUCCESS: Set the 2-day timer starting now
+                localStorage.setItem("login_timestamp", Date.now().toString());
                 navigate('/dashboard');
             } else {
-                // FAILURE: Signed in but not on the whitelist
-                await logout(); // Terminate session immediately
-                setErrorMessage("Access Denied: This account is not authorized to access Inventurax.");
+                await logout();
+                setErrorMessage("Access Denied: Account not authorized.");
                 setShowError(true);
             }
         } catch (error) {
             console.error("Authentication error:", error);
-            setErrorMessage("Authentication failed. Please try again.");
+            setErrorMessage("Authentication failed.");
             setShowError(true);
         }
     };

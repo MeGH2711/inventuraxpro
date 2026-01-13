@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useAuth } from '../context/AuthContext'; //
 
 // Import New CSS
 import '../css/Sidebar.css';
@@ -16,14 +17,17 @@ import {
     MdPeople,
     MdAccountBalanceWallet,
     MdChevronLeft,
-    MdChevronRight
+    MdChevronRight,
+    MdLogout // Added Logout Icon
 } from 'react-icons/md';
 
 // Logo and Icon
-import inventuraxLogoWhite from '../assets/images/inventuraxLogoWhite.png' 
-import inventuraxIconWhite from '../assets/images/inventuraxIconWhite.png' 
+import inventuraxLogoWhite from '../assets/images/inventuraxLogoWhite.png'
+import inventuraxIconWhite from '../assets/images/inventuraxIconWhite.png'
 
 const Sidebar = () => {
+    const { logout } = useAuth(); // Access logout from context
+    const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(
         localStorage.getItem('sidebarCollapsed') === 'true'
     );
@@ -33,6 +37,15 @@ const Sidebar = () => {
     }, [isCollapsed]);
 
     const toggleSidebar = () => setIsCollapsed(!isCollapsed);
+
+    const handleLogout = async () => {
+        try {
+            await logout(); //
+            navigate('/');
+        } catch (error) {
+            console.error("Logout failed", error);
+        }
+    };
 
     const navLinks = [
         { path: '/dashboard', icon: <MdDashboard />, text: 'Dashboard' },
@@ -77,6 +90,21 @@ const Sidebar = () => {
                         </OverlayTrigger>
                     ))}
                 </div>
+            </div>
+
+            {/* Logout Button Section */}
+            <div className="sidebar-footer">
+                <OverlayTrigger
+                    placement="right"
+                    overlay={isCollapsed ? <Tooltip>Logout</Tooltip> : <span className="d-none" />}
+                >
+                    <button className="logout-btn" onClick={handleLogout}>
+                        <span className="sidebar-icon fs-4">
+                            <MdLogout />
+                        </span>
+                        <span className="link-text ms-3">Logout</span>
+                    </button>
+                </OverlayTrigger>
             </div>
 
             <div className="p-3 sidebar-toggle-wrapper">
