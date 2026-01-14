@@ -143,7 +143,6 @@ export const generateInvoice = async (data, company = {}) => {
     doc.setFontSize(8).setTextColor(150).setFont("helvetica", "normal");
     doc.text("Thank you for choosing De Baker's & More!", pageWidth / 2, footerY, { align: "center" });
 
-    // Social Media Clickable Links
     doc.setTextColor(0, 0, 255).setFont("helvetica", "bold"); // Blue for links
 
     // Instagram Link
