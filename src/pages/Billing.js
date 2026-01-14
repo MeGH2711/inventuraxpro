@@ -42,7 +42,7 @@ const Billing = () => {
         customerAddress: '',
         billingDate: new Date().toISOString().split('T')[0],
         billingTime: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-        deliveryMode: 'Store Pickup',
+        deliveryMode: 'In-house',
         paymentMode: 'UPI'
     });
 
@@ -81,6 +81,14 @@ const Billing = () => {
     // Derived Calculations
     const subTotal = cart.reduce((acc, item) => acc + item.discountedTotal, 0);
     const finalCalculatedTotal = subTotal - (subTotal * (overallDiscount / 100));
+
+    // Helper to check if Invoice button should be visible
+    const isCustomerDataComplete =
+        billingData.customerName.trim() !== "" &&
+        billingData.contactNumber.trim() !== "" &&
+        billingData.customerAddress.trim() !== "" &&
+        billingData.billingDate !== "" &&
+        billingData.billingTime !== "";
 
     // Keep the manual input field in sync with calculations when items change
     useEffect(() => {
@@ -126,19 +134,15 @@ const Billing = () => {
         setCart(updatedCart);
     };
 
-    // LOGIC: Handle manual editing of the Grand Total
     const handleManualTotalChange = (inputValue) => {
-        setManualTotal(inputValue); // Update text immediately for smooth typing
-
+        setManualTotal(inputValue);
         const value = parseFloat(inputValue);
         if (!isNaN(value) && subTotal > 0) {
-            // Calculate required discount % to match the typed total
             const newDiscountPercent = ((subTotal - value) / subTotal) * 100;
             setOverallDiscount(parseFloat(newDiscountPercent.toFixed(2)));
         }
     };
 
-    // Helper for PDF generation
     const downloadInvoicePDF = (billNum, bData, currentCart, sTotal, oDisc, fTotal) => {
         generateInvoice({
             nextBillNumber: billNum,
@@ -150,13 +154,25 @@ const Billing = () => {
         }, companyInfo);
     };
 
-    // Save transaction
-    const handleCompleteTransaction = async () => {
+    // PHASE 1: Open the modal to review
+    const handleOpenReviewModal = () => {
         if (cart.length === 0) {
             setToast({ show: true, message: 'Please add products to the bill.', bg: 'danger' });
             return;
         }
+        // Prepare data for the modal/receipt
+        setLastSavedBill({
+            billingData: { ...billingData },
+            cart: [...cart],
+            subTotal,
+            overallDiscount,
+            finalCalculatedTotal
+        });
+        setShowPostSaveModal(true);
+    };
 
+    // PHASE 2: Actual Save Logic (triggered from inside the Modal)
+    const saveBillToFirestore = async () => {
         setLoading(true);
         try {
             const coll = collection(db, "bills");
@@ -165,7 +181,7 @@ const Billing = () => {
 
             const billSchema = {
                 billNumber: billNumber,
-                customerName: billingData.customerName,
+                customerName: billingData.customerName || "Walking Customer",
                 customerNumber: billingData.contactNumber,
                 customerAddress: billingData.customerAddress,
                 billingDate: billingData.billingDate,
@@ -187,21 +203,12 @@ const Billing = () => {
 
             await addDoc(collection(db, "bills"), billSchema);
 
-            setLastSavedBill({
-                billNumber,
-                billingData: { ...billingData },
-                cart: [...cart],
-                subTotal,
-                overallDiscount,
-                finalCalculatedTotal
-            });
+            // Update Next Bill number for UI
+            setNextBillNumber(billNumber + 1);
 
-            setToast({ show: true, message: `Bill #${billNumber} saved successfully!`, bg: 'success' });
-            setShowPostSaveModal(true);
-
+            // Clear current form
             setCart([]);
             setOverallDiscount(0);
-            setNextBillNumber(billNumber + 1);
             setBillingData({
                 ...billingData,
                 customerName: '',
@@ -210,9 +217,12 @@ const Billing = () => {
                 billingDate: new Date().toISOString().split('T')[0],
                 billingTime: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
             });
+
+            return billNumber;
         } catch (error) {
             console.error("Error saving bill:", error);
             setToast({ show: true, message: 'Error saving transaction.', bg: 'danger' });
+            throw error;
         } finally {
             setLoading(false);
         }
@@ -221,8 +231,10 @@ const Billing = () => {
     const openWhatsApp = () => {
         if (lastSavedBill?.billingData?.contactNumber) {
             const number = lastSavedBill.billingData.contactNumber.replace(/\D/g, '');
-            const message = `Hello ${lastSavedBill.billingData.customerName}, thank you for your purchase at ${companyInfo?.brandName || "De Baker's & More"}! Your bill total is ₹${lastSavedBill.finalCalculatedTotal.toFixed(2)}.`;
+            const message = `Hello ${lastSavedBill.billingData.customerName || 'Customer'}, thank you for your purchase at ${companyInfo?.brandName || "De Baker's & More"}! Your bill total is ₹${lastSavedBill.finalCalculatedTotal.toFixed(2)}.`;
             window.open(`https://wa.me/91${number}?text=${encodeURIComponent(message)}`, '_blank');
+        } else {
+            setToast({ show: true, message: 'No contact number provided for WhatsApp.', bg: 'warning' });
         }
     };
 
@@ -238,8 +250,8 @@ const Billing = () => {
                         <span className="small fw-bold text-muted text-uppercase me-2">Bill No:</span>
                         <span className="fw-bold text-dark">{nextBillNumber}</span>
                     </div>
-                    <Button variant="dark" className="px-4 py-2 shadow-sm" onClick={handleCompleteTransaction} disabled={loading}>
-                        <MdReceipt className="me-2" /> {loading ? 'Saving...' : 'Complete Transaction'}
+                    <Button variant="dark" className="px-4 py-2 shadow-sm" onClick={handleOpenReviewModal}>
+                        <MdReceipt className="me-2" /> Complete Transaction
                     </Button>
                 </div>
             </div>
@@ -262,8 +274,8 @@ const Billing = () => {
                                 <Form.Control type="text" value={billingData.customerAddress} onChange={(e) => setBillingData({ ...billingData, customerAddress: e.target.value })} />
                             </Form.Group>
                             <Row>
-                                <Col md={6}><Form.Group className="mb-3"><Form.Label className="small fw-bold text-muted">DATE</Form.Label><Form.Control type="date" value={billingData.billingDate} readOnly /></Form.Group></Col>
-                                <Col md={6}><Form.Group className="mb-3"><Form.Label className="small fw-bold text-muted">TIME</Form.Label><Form.Control type="time" value={billingData.billingTime} readOnly /></Form.Group></Col>
+                                <Col md={6}><Form.Group className="mb-3"><Form.Label className="small fw-bold text-muted">DATE</Form.Label><Form.Control type="date" value={billingData.billingDate} onChange={(e) => setBillingData({ ...billingData, billingDate: e.target.value })} /></Form.Group></Col>
+                                <Col md={6}><Form.Group className="mb-3"><Form.Label className="small fw-bold text-muted">TIME</Form.Label><Form.Control type="time" value={billingData.billingTime} onChange={(e) => setBillingData({ ...billingData, billingTime: e.target.value })} /></Form.Group></Col>
                             </Row>
                         </Card.Body>
                     </Card>
@@ -274,9 +286,8 @@ const Billing = () => {
                             <Form.Group className="mb-3">
                                 <Form.Label className="small fw-bold text-muted">DELIVERY MODE</Form.Label>
                                 <Form.Select value={billingData.deliveryMode} onChange={(e) => setBillingData({ ...billingData, deliveryMode: e.target.value })}>
-                                    <option>Store Pickup</option>
-                                    <option>Home Delivery</option>
                                     <option>In-house</option>
+                                    <option>Home Delivery</option>
                                 </Form.Select>
                             </Form.Group>
                             <Form.Group>
@@ -302,7 +313,7 @@ const Billing = () => {
                                         {suggestions.map(p => (
                                             <ListGroup.Item key={p.id} action onClick={() => selectProduct(p)} className="d-flex justify-content-between align-items-center">
                                                 <div><span className="fw-bold">{p.name}</span><span className="text-muted small ms-2">[{p.unitValue} {p.unitType === 'piece' ? 'pcs' : 'gms'}]</span></div>
-                                                <span className="badge bg-primary rounded-pill">₹{p.price}</span>
+                                                <span className="badge bg-darkblue rounded-pill">₹{p.price}</span>
                                             </ListGroup.Item>
                                         ))}
                                     </ListGroup>
@@ -395,36 +406,60 @@ const Billing = () => {
                 </Col>
             </Row>
 
-            <Modal show={showPostSaveModal} onHide={() => setShowPostSaveModal(false)} centered backdrop="static">
-                <Modal.Header closeButton className="border-0 pt-4 px-4">
-                    <Modal.Title className="fw-bold">Transaction Successful</Modal.Title>
+            <Modal show={showPostSaveModal} onHide={() => !loading && setShowPostSaveModal(false)} centered backdrop="static">
+                <Modal.Header closeButton={!loading} className="border-0 pt-4 px-4">
+                    <Modal.Title className="fw-bold">Confirm Transaction</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="px-4 pb-4 text-center">
                     <div className="mb-4">
                         <div className="text-success display-4 mb-2">₹{lastSavedBill?.finalCalculatedTotal.toFixed(2)}</div>
-                        <p className="text-muted">Bill #<strong>{lastSavedBill?.billNumber}</strong> has been saved.</p>
+                        <p className="text-muted">Review items and details before saving.</p>
+                        {!isCustomerDataComplete && (
+                            <p className="text-danger small mt-2">Note: Customer details are missing. Invoice download is disabled.</p>
+                        )}
                     </div>
                     <div className="d-grid gap-3">
-                        <Button
-                            variant="primary" size="lg" className="py-3 shadow-sm"
-                            onClick={() => downloadInvoicePDF(
-                                lastSavedBill.billNumber, lastSavedBill.billingData, lastSavedBill.cart,
-                                lastSavedBill.subTotal, lastSavedBill.overallDiscount, lastSavedBill.finalCalculatedTotal
-                            )}
-                        >
-                            <MdFileDownload className="me-2" /> Download & Print Invoice
-                        </Button>
+                        {/* ONLY SHOW THIS BUTTON IF ALL FIELDS ARE FILLED */}
+                        {isCustomerDataComplete && (
+                            <Button
+                                variant="darkblue" size="lg" className="py-3 shadow-sm"
+                                disabled={loading}
+                                onClick={async () => {
+                                    const billNum = await saveBillToFirestore();
+                                    downloadInvoicePDF(
+                                        billNum, lastSavedBill.billingData, lastSavedBill.cart,
+                                        lastSavedBill.subTotal, lastSavedBill.overallDiscount, lastSavedBill.finalCalculatedTotal
+                                    );
+                                    setShowPostSaveModal(false);
+                                    setToast({ show: true, message: `Bill #${billNum} saved and downloading...`, bg: 'success' });
+                                }}
+                            >
+                                <MdFileDownload className="me-2" /> {loading ? 'Saving...' : 'Save & Print Invoice'}
+                            </Button>
+                        )}
+
                         <div className="row g-2">
-                            <div className="col-6">
-                                <Button variant="outline-dark" className="w-100 py-2" onClick={() => setShowPostSaveModal(false)}>
-                                    <MdSave className="me-2" /> Save & Close
+                            <div className={isCustomerDataComplete ? "col-6" : "col-12"}>
+                                <Button
+                                    variant="outline-dark"
+                                    className="w-100 py-2"
+                                    disabled={loading}
+                                    onClick={async () => {
+                                        const billNum = await saveBillToFirestore();
+                                        setShowPostSaveModal(false);
+                                        setToast({ show: true, message: `Bill #${billNum} saved successfully!`, bg: 'success' });
+                                    }}
+                                >
+                                    <MdSave className="me-2" /> {loading ? 'Saving...' : 'Save & Close'}
                                 </Button>
                             </div>
-                            <div className="col-6">
-                                <Button variant="success" className="w-100 py-2" onClick={openWhatsApp}>
-                                    <MdMessage className="me-2" /> WhatsApp
-                                </Button>
-                            </div>
+                            {isCustomerDataComplete && (
+                                <div className="col-6">
+                                    <Button variant="success" className="w-100 py-2" onClick={openWhatsApp}>
+                                        <MdMessage className="me-2" /> WhatsApp
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </Modal.Body>

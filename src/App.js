@@ -6,14 +6,16 @@ import PrivateRoute from "./components/PrivateRoute";
 
 // Pages
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import CompanyDetails from "./pages/CompanyDetails";
 import Billing from "./pages/Billing";
+import BillLogs from "./pages/BillLogs";
+import Analytics from "./pages/Analytics";
+import Customers from "./pages/Customers";
 
 import './css/style.css';
 import './css/lightTheme.css';
-
-const Dashboard = () => <div className="p-4"><h1>Dashboard Page</h1></div>;
 
 // 1. Create a Layout component to keep Sidebar persistent
 const Layout = ({ children }) => (
@@ -43,6 +45,9 @@ function App() {
                     <Route path="/products" element={<Products />} />
                     <Route path="/companydetails" element={<CompanyDetails />} />
                     <Route path="/billing" element={<Billing />} />
+                    <Route path="/billlogs" element={<BillLogs />} />
+                    <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/customers" element={<Customers />} />
                     
                     <Route path="/" element={<Navigate to="/dashboard" />} />
                   </Routes>

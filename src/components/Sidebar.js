@@ -52,7 +52,7 @@ const Sidebar = () => {
         { path: '/companydetails', icon: <MdBusiness />, text: 'Company Details' },
         { path: '/products', icon: <MdShoppingBag />, text: 'Product Listing' },
         { path: '/billing', icon: <MdReceiptLong />, text: 'Billing' },
-        { path: '/bill-logs', icon: <MdHistoryEdu />, text: 'Bill Logs' },
+        { path: '/billlogs', icon: <MdHistoryEdu />, text: 'Bill Logs' },
         { path: '/analytics', icon: <MdInsights />, text: 'Analytics' },
         { path: '/customers', icon: <MdPeople />, text: 'Customers' },
         { path: '/transactions', icon: <MdAccountBalanceWallet />, text: 'Transactions' },

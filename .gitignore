@@ -24,3 +24,5 @@ yarn-error.log*
 
 codetopush.txt
 combinedcode.txt
+
+.env

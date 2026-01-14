@@ -3,12 +3,12 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCby5WCd4eWkLkefBEzkuor5CY16oa5-qg",
-    authDomain: "inventuraxpro.firebaseapp.com",
-    projectId: "inventuraxpro",
-    storageBucket: "inventuraxpro.firebasestorage.app",
-    messagingSenderId: "348243188370",
-    appId: "1:348243188370:web:d6c0bf47e61db2684d244b"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
