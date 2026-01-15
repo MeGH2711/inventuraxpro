@@ -82,7 +82,7 @@ const Dashboard = () => {
             color: "gradient-card"
         },
         {
-            title: "Repeat Rate",
+            title: "Customer Repeat Rate",
             value: `${repeatRate}%`,
             icon: <MdLoop />,
             color: "gradient-card"

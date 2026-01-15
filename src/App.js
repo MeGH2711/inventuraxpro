@@ -15,7 +15,6 @@ import Analytics from "./pages/Analytics";
 import Customers from "./pages/Customers";
 
 import './css/style.css';
-import './css/lightTheme.css';
 
 // 1. Create a Layout component to keep Sidebar persistent
 const Layout = ({ children }) => (
