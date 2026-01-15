@@ -1,6 +1,6 @@
 import React from 'react';
-import { Container, Row, Col, Card, Button, InputGroup, Form } from 'react-bootstrap';
-import { MdPeople, MdPersonAdd, MdSearch, MdHistory, MdCardMembership, MdStar } from 'react-icons/md';
+import { Container, Row, Col, Card } from 'react-bootstrap';
+import { MdPeople, MdHistory, MdCardMembership, MdStar } from 'react-icons/md';
 
 const Customers = () => {
     return (

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../firebaseConfig';
 import {
     collection, getDocs, query, orderBy,
-    addDoc, serverTimestamp, getCountFromServer, doc, getDoc
+    addDoc, serverTimestamp, getCountFromServer, doc, getDoc, limit
 } from 'firebase/firestore';
 import { Form, Button, Card, Row, Col, Table, ListGroup, Toast, ToastContainer, Modal } from 'react-bootstrap';
 import {
@@ -24,6 +24,11 @@ const Billing = () => {
     const [loading, setLoading] = useState(false);
     const [nextBillNumber, setNextBillNumber] = useState('...');
 
+    // Customer Suggestion States
+    const [allCustomers, setAllCustomers] = useState([]);
+    const [customerSuggestions, setCustomerSuggestions] = useState([]);
+    const [showCustomerSuggestions, setShowCustomerSuggestions] = useState({ name: false, phone: false });
+
     // Local state for the editable Grand Total to prevent cursor jumping
     const [manualTotal, setManualTotal] = useState("");
 
@@ -33,7 +38,10 @@ const Billing = () => {
     const [lastSavedBill, setLastSavedBill] = useState(null);
     const [toast, setToast] = useState({ show: false, message: '', bg: 'success' });
 
+    // Refs for outside clicks
     const suggestionRef = useRef(null);
+    const customerNameRef = useRef(null);
+    const customerPhoneRef = useRef(null);
     const [isTotalExpanded, setIsTotalExpanded] = useState(true);
 
     const [billingData, setBillingData] = useState({
@@ -50,16 +58,38 @@ const Billing = () => {
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
+                // Fetch Company Settings
                 const companyRef = doc(db, "settings", "company");
                 const companySnap = await getDoc(companyRef);
                 if (companySnap.exists()) {
                     setCompanyInfo(companySnap.data());
                 }
 
+                // Fetch Products
                 const q = query(collection(db, "products"), orderBy("name"));
                 const snapshot = await getDocs(q);
                 setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
+                // Fetch Unique Customers from Past Bills
+                const billsQuery = query(collection(db, "bills"), orderBy("createdAt", "desc"), limit(500));
+                const billsSnap = await getDocs(billsQuery);
+                const uniqueCustomers = [];
+                const seenNumbers = new Set();
+
+                billsSnap.docs.forEach(doc => {
+                    const data = doc.data();
+                    if (data.customerNumber && !seenNumbers.has(data.customerNumber)) {
+                        seenNumbers.add(data.customerNumber);
+                        uniqueCustomers.push({
+                            name: data.customerName,
+                            phone: data.customerNumber,
+                            address: data.customerAddress
+                        });
+                    }
+                });
+                setAllCustomers(uniqueCustomers);
+
+                // Get Next Bill Number
                 const coll = collection(db, "bills");
                 const snapshotCount = await getCountFromServer(coll);
                 setNextBillNumber(snapshotCount.data().count + 1);
@@ -73,6 +103,12 @@ const Billing = () => {
             if (suggestionRef.current && !suggestionRef.current.contains(event.target)) {
                 setShowSuggestions(false);
             }
+            if (customerNameRef.current && !customerNameRef.current.contains(event.target)) {
+                setShowCustomerSuggestions(prev => ({ ...prev, name: false }));
+            }
+            if (customerPhoneRef.current && !customerPhoneRef.current.contains(event.target)) {
+                setShowCustomerSuggestions(prev => ({ ...prev, phone: false }));
+            }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -82,7 +118,6 @@ const Billing = () => {
     const subTotal = cart.reduce((acc, item) => acc + item.discountedTotal, 0);
     const finalCalculatedTotal = subTotal - (subTotal * (overallDiscount / 100));
 
-    // Helper to check if Invoice button should be visible
     const isCustomerDataComplete =
         billingData.customerName.trim() !== "" &&
         billingData.contactNumber.trim() !== "" &&
@@ -90,12 +125,11 @@ const Billing = () => {
         billingData.billingDate !== "" &&
         billingData.billingTime !== "";
 
-    // Keep the manual input field in sync with calculations when items change
     useEffect(() => {
         setManualTotal(finalCalculatedTotal.toFixed(2));
     }, [finalCalculatedTotal]);
 
-    // Search and Cart Logic
+    // Product Search Logic
     const handleSearch = (e) => {
         const value = e.target.value;
         setSearchTerm(value);
@@ -107,6 +141,34 @@ const Billing = () => {
             setSuggestions([]);
             setShowSuggestions(false);
         }
+    };
+
+    // Customer Search Logic
+    const handleCustomerSearch = (field, value) => {
+        setBillingData({ ...billingData, [field]: value });
+        if (value.length > 1) {
+            const filtered = allCustomers.filter(c =>
+                c.name?.toLowerCase().includes(value.toLowerCase()) ||
+                c.phone?.includes(value)
+            );
+            setCustomerSuggestions(filtered);
+            setShowCustomerSuggestions({
+                name: field === 'customerName',
+                phone: field === 'contactNumber'
+            });
+        } else {
+            setShowCustomerSuggestions({ name: false, phone: false });
+        }
+    };
+
+    const selectCustomer = (customer) => {
+        setBillingData({
+            ...billingData,
+            customerName: customer.name,
+            contactNumber: customer.phone,
+            customerAddress: customer.address || ''
+        });
+        setShowCustomerSuggestions({ name: false, phone: false });
     };
 
     const selectProduct = (product) => {
@@ -154,13 +216,11 @@ const Billing = () => {
         }, companyInfo);
     };
 
-    // PHASE 1: Open the modal to review
     const handleOpenReviewModal = () => {
         if (cart.length === 0) {
             setToast({ show: true, message: 'Please add products to the bill.', bg: 'danger' });
             return;
         }
-        // Prepare data for the modal/receipt
         setLastSavedBill({
             billingData: { ...billingData },
             cart: [...cart],
@@ -171,7 +231,6 @@ const Billing = () => {
         setShowPostSaveModal(true);
     };
 
-    // PHASE 2: Actual Save Logic (triggered from inside the Modal)
     const saveBillToFirestore = async () => {
         setLoading(true);
         try {
@@ -202,11 +261,15 @@ const Billing = () => {
             };
 
             await addDoc(collection(db, "bills"), billSchema);
-
-            // Update Next Bill number for UI
             setNextBillNumber(billNumber + 1);
 
-            // Clear current form
+            // Update local customer list for immediate suggestion in next bill
+            setAllCustomers(prev => [{
+                name: billingData.customerName,
+                phone: billingData.contactNumber,
+                address: billingData.customerAddress
+            }, ...prev]);
+
             setCart([]);
             setOverallDiscount(0);
             setBillingData({
@@ -261,14 +324,47 @@ const Billing = () => {
                     <Card className="border-0 shadow-sm rounded-4 mb-4">
                         <Card.Body className="p-4">
                             <div className="fw-bold text-muted small mb-3"><MdPerson className="me-2" /> CUSTOMER DETAILS</div>
-                            <Form.Group className="mb-3">
+
+                            <Form.Group className="mb-3 position-relative" ref={customerNameRef}>
                                 <Form.Label className="small fw-bold text-muted">NAME</Form.Label>
-                                <Form.Control type="text" value={billingData.customerName} onChange={(e) => setBillingData({ ...billingData, customerName: e.target.value })} />
+                                <Form.Control
+                                    type="text"
+                                    autoComplete="off"
+                                    value={billingData.customerName}
+                                    onChange={(e) => handleCustomerSearch('customerName', e.target.value)}
+                                />
+                                {showCustomerSuggestions.name && customerSuggestions.length > 0 && (
+                                    <ListGroup className="position-absolute w-100 shadow-lg" style={{ zIndex: 1060 }}>
+                                        {customerSuggestions.map((c, i) => (
+                                            <ListGroup.Item key={i} action onClick={() => selectCustomer(c)}>
+                                                <div className="fw-bold">{c.name}</div>
+                                                <small className="text-muted">{c.phone}</small>
+                                            </ListGroup.Item>
+                                        ))}
+                                    </ListGroup>
+                                )}
                             </Form.Group>
-                            <Form.Group className="mb-3">
+
+                            <Form.Group className="mb-3 position-relative" ref={customerPhoneRef}>
                                 <Form.Label className="small fw-bold text-muted">CONTACT NUMBER</Form.Label>
-                                <Form.Control type="tel" value={billingData.contactNumber} onChange={(e) => setBillingData({ ...billingData, contactNumber: e.target.value })} />
+                                <Form.Control
+                                    type="tel"
+                                    autoComplete="off"
+                                    value={billingData.contactNumber}
+                                    onChange={(e) => handleCustomerSearch('contactNumber', e.target.value)}
+                                />
+                                {showCustomerSuggestions.phone && customerSuggestions.length > 0 && (
+                                    <ListGroup className="position-absolute w-100 shadow-lg" style={{ zIndex: 1060 }}>
+                                        {customerSuggestions.map((c, i) => (
+                                            <ListGroup.Item key={i} action onClick={() => selectCustomer(c)}>
+                                                <div className="fw-bold">{c.phone}</div>
+                                                <small className="text-muted">{c.name}</small>
+                                            </ListGroup.Item>
+                                        ))}
+                                    </ListGroup>
+                                )}
                             </Form.Group>
+
                             <Form.Group className="mb-3">
                                 <Form.Label className="small fw-bold text-muted">ADDRESS</Form.Label>
                                 <Form.Control type="text" value={billingData.customerAddress} onChange={(e) => setBillingData({ ...billingData, customerAddress: e.target.value })} />
@@ -307,7 +403,7 @@ const Billing = () => {
                         <Card.Header className="bg-white border-0 pt-4 px-4 position-relative">
                             <div className="input-group" ref={suggestionRef}>
                                 <span className="input-group-text bg-light border-0"><MdSearch /></span>
-                                <Form.Control placeholder="Type product name to add..." value={searchTerm} onChange={handleSearch} className="bg-light border-0 shadow-none py-2" />
+                                <Form.Control placeholder="Type product name to add..." value={searchTerm} onChange={handleSearch} className="bg-light border-0 shadow-none py-2" autoComplete="off" />
                                 {showSuggestions && (
                                     <ListGroup className="position-absolute w-100 shadow-lg" style={{ top: '100%', left: 0, zIndex: 1060 }}>
                                         {suggestions.map(p => (
@@ -419,7 +515,6 @@ const Billing = () => {
                         )}
                     </div>
                     <div className="d-grid gap-3">
-                        {/* ONLY SHOW THIS BUTTON IF ALL FIELDS ARE FILLED */}
                         {isCustomerDataComplete && (
                             <Button
                                 variant="darkblue" size="lg" className="py-3 shadow-sm"
