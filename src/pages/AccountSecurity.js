@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, setDoc, deleteDoc, doc, query } from 'firebase/firestore';
 import { Container, Card, Table, Button, Form, InputGroup, Badge, Toast, ToastContainer } from 'react-bootstrap';
@@ -7,18 +7,18 @@ import { MdSecurity, MdPersonAdd, MdDelete, MdVerifiedUser, MdOutlineMail } from
 const AccountSecurity = () => {
     const [users, setUsers] = useState([]);
     const [newEmail, setNewEmail] = useState('');
-    const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', bg: 'success' });
 
     // Define the Protected Master Account
     const MASTER_ACCOUNT = "patelmeghmahesh2701@gmail.com";
 
-    useEffect(() => {
-        fetchAuthorizedUsers();
+    // Notification helper
+    const showNotification = useCallback((message, bg = 'success') => {
+        setToast({ show: true, message, bg });
     }, []);
 
-    const fetchAuthorizedUsers = async () => {
-        setLoading(true);
+    // Fetching Logic wrapped in useCallback to satisfy dependency requirements
+    const fetchAuthorizedUsers = useCallback(async () => {
         try {
             const q = query(collection(db, "authorized_users"));
             const snapshot = await getDocs(q);
@@ -28,18 +28,24 @@ const AccountSecurity = () => {
 
             // SORTING LOGIC: Keep Master Account at the very top
             userList.sort((a, b) => {
-                if (a.email === MASTER_ACCOUNT) return -1;
-                if (b.email === MASTER_ACCOUNT) return 1;
-                return a.email.localeCompare(b.email); // Sort others alphabetically
+                const emailA = a.email.toLowerCase();
+                const emailB = b.email.toLowerCase();
+                const master = MASTER_ACCOUNT.toLowerCase();
+
+                if (emailA === master) return -1;
+                if (emailB === master) return 1;
+                return emailA.localeCompare(emailB);
             });
 
             setUsers(userList);
         } catch (error) {
             showNotification("Error fetching users", "danger");
-        } finally {
-            setLoading(false);
         }
-    };
+    }, [MASTER_ACCOUNT, showNotification]);
+
+    useEffect(() => {
+        fetchAuthorizedUsers();
+    }, [fetchAuthorizedUsers]);
 
     const handleAddUser = async (e) => {
         e.preventDefault();
@@ -81,10 +87,6 @@ const AccountSecurity = () => {
         }
     };
 
-    const showNotification = (message, bg = 'success') => {
-        setToast({ show: true, message, bg });
-    };
-
     return (
         <Container fluid className="py-4">
             <div className="mb-4">
@@ -106,7 +108,7 @@ const AccountSecurity = () => {
                                 onChange={(e) => setNewEmail(e.target.value)}
                                 className="border-start-0 shadow-none"
                             />
-                            <Button variant="darkblue" type="submit" className="px-4">
+                            <Button variant="dark" type="submit" className="px-4">
                                 <MdPersonAdd className="me-2" /> Grant Access
                             </Button>
                         </InputGroup>
@@ -130,20 +132,20 @@ const AccountSecurity = () => {
                         </thead>
                         <tbody>
                             {users.map((u, index) => (
-                                <tr key={index} className={u.email === MASTER_ACCOUNT ? "bg-light-blue" : ""}>
+                                <tr key={u.email || index} className={u.email === MASTER_ACCOUNT ? "bg-light" : ""}>
                                     <td className="ps-4 fw-medium text-dark">
                                         {u.email}
-                                        {u.email === MASTER_ACCOUNT && (
+                                        {u.email.toLowerCase() === MASTER_ACCOUNT.toLowerCase() && (
                                             <Badge bg="primary" className="ms-2 px-2 py-1" style={{ fontSize: '0.65rem' }}>SYSTEM OWNER</Badge>
                                         )}
                                     </td>
                                     <td>
-                                        <Badge bg="success-soft" className="text-success border border-success px-3 py-2 rounded-pill">
+                                        <Badge bg="info" className="px-3 py-2 rounded-pill">
                                             Admin
                                         </Badge>
                                     </td>
                                     <td className="text-end pe-4">
-                                        {u.email !== MASTER_ACCOUNT ? (
+                                        {u.email.toLowerCase() !== MASTER_ACCOUNT.toLowerCase() ? (
                                             <Button variant="link" className="text-danger p-0" onClick={() => handleDeleteUser(u.email)}>
                                                 <MdDelete size={20} />
                                             </Button>

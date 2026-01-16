@@ -9,7 +9,6 @@ import '../css/Sidebar.css';
 // Import React Icons
 import {
     MdDashboard,
-    MdBusiness,
     MdShoppingBag,
     MdReceiptLong,
     MdHistoryEdu,

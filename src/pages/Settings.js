@@ -1,12 +1,9 @@
 import React from 'react';
-import { Container, Row, Col, Card, Button, ListGroup } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button } from 'react-bootstrap';
 import {
     MdBusiness,
     MdArrowForward,
-    MdPerson,
-    MdNotifications,
-    MdSecurity,
-    MdPalette
+    MdSecurity
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 
