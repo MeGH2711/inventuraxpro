@@ -220,8 +220,8 @@ const Dashboard = () => {
                                 <Button variant="outline-darkblue" className="text-start py-3 d-flex align-items-center" onClick={() => navigate('/products')}>
                                     <MdInventory className="me-3" size={20} /> Manage Inventory
                                 </Button>
-                                <Button variant="outline-darkblue" className="text-start py-3 d-flex align-items-center" onClick={() => navigate('/companydetails')}>
-                                    <MdTrendingUp className="me-3" size={20} /> Company Settings
+                                <Button variant="outline-darkblue" className="text-start py-3 d-flex align-items-center" onClick={() => navigate('/setting')}>
+                                    <MdTrendingUp className="me-3" size={20} /> Settings
                                 </Button>
                                 <Button variant="outline-darkblue" className="text-start py-3 d-flex align-items-center" onClick={() => navigate('/analytics')}>
                                     <MdInsights className="me-3" size={20} /> Analytics
