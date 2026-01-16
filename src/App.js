@@ -36,6 +36,7 @@ function App() {
           <Route path="/" element={<Login />} />
 
           {/* 2. Wrap all protected routes in a way that Sidebar stays put */}
+          
           <Route
             path="/*"
             element={
