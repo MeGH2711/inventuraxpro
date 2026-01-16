@@ -8,7 +8,9 @@ import PrivateRoute from "./components/PrivateRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
+import Setting from "./pages/Settings";
 import CompanyDetails from "./pages/CompanyDetails";
+import AccountSecurity from "./pages/AccountSecurity";
 import Billing from "./pages/Billing";
 import BillLogs from "./pages/BillLogs";
 import Analytics from "./pages/Analytics";
@@ -42,7 +44,11 @@ function App() {
                   <Routes>
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/products" element={<Products />} />
-                    <Route path="/companydetails" element={<CompanyDetails />} />
+
+                    <Route path="/setting" element={<Setting />} />
+                    <Route path="/setting/company" element={<CompanyDetails />} />
+                    <Route path="/setting/security" element={<AccountSecurity />} />
+
                     <Route path="/billing" element={<Billing />} />
                     <Route path="/billlogs" element={<BillLogs />} />
                     <Route path="/analytics" element={<Analytics />} />

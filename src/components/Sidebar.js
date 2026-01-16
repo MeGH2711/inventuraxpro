@@ -19,7 +19,8 @@ import {
     MdChevronLeft,
     MdChevronRight,
     MdLogout,
-    MdWarning // Added Warning Icon for Modal
+    MdWarning,
+    MdOutlineSettingsSuggest
 } from 'react-icons/md';
 
 // Logo and Icon
@@ -55,13 +56,13 @@ const Sidebar = () => {
 
     const navLinks = [
         { path: '/dashboard', icon: <MdDashboard />, text: 'Dashboard' },
-        { path: '/companydetails', icon: <MdBusiness />, text: 'Company Details' },
         { path: '/products', icon: <MdShoppingBag />, text: 'Product Listing' },
         { path: '/billing', icon: <MdReceiptLong />, text: 'Billing' },
         { path: '/billlogs', icon: <MdHistoryEdu />, text: 'Bill Logs' },
         { path: '/analytics', icon: <MdInsights />, text: 'Analytics' },
         { path: '/customers', icon: <MdPeople />, text: 'Customers' },
         { path: '/transactions', icon: <MdAccountBalanceWallet />, text: 'Transactions' },
+        { path: '/setting', icon: <MdOutlineSettingsSuggest />, text: 'Settings' },
     ];
 
     return (
