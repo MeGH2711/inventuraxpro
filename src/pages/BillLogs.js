@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, InputGroup, Form, Badge, Spinner, Modal } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, InputGroup, Form, Badge, Spinner } from 'react-bootstrap';
 import {
-    MdSearch, MdFileDownload,
-    MdVisibility, MdPrint, MdReceipt, MdPerson, MdLocalShipping, MdMessage, MdFilterList, MdClear
+    MdSearch,
+    MdVisibility, MdPrint, MdFilterList, MdClear
 } from 'react-icons/md';
 import { db } from '../firebaseConfig';
 import { collection, query, orderBy, getDocs, limit, doc, getDoc } from 'firebase/firestore';
@@ -13,8 +13,6 @@ const BillLogs = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [companyInfo, setCompanyInfo] = useState(null);
-    const [showViewModal, setShowViewModal] = useState(false);
-    const [selectedBill, setSelectedBill] = useState(null);
     const [paymentFilter, setPaymentFilter] = useState('');
 
     // Date Range States
@@ -79,16 +77,6 @@ const BillLogs = () => {
         return `${formattedHours}:${minutes} ${ampm}`;
     };
 
-    const openWhatsApp = (bill) => {
-        if (bill?.customerName?.toLowerCase() === "walking customer") return;
-
-        if (bill?.customerNumber) {
-            const number = bill.customerNumber.replace(/\D/g, '');
-            const message = `Hello ${bill.customerName || 'Customer'}, thank you for your purchase at ${companyInfo?.brandName || "De Baker's & More"}! Your bill total is ₹${bill.finalTotal.toFixed(2)}.`;
-            window.open(`https://wa.me/91${number}?text=${encodeURIComponent(message)}`, '_blank');
-        }
-    };
-
     const handlePrint = (bill) => {
         if (bill?.customerName?.toLowerCase() === "walking customer") return;
 
@@ -96,7 +84,7 @@ const BillLogs = () => {
             nextBillNumber: bill.billNumber,
             billingData: {
                 ...bill,
-                customerNumber: bill.customerNumber,
+                contactNumber: bill.customerNumber,
                 deliveryMode: bill.modeOfDelivery,
                 paymentMode: bill.modeOfPayment
             },
@@ -163,7 +151,7 @@ const BillLogs = () => {
                 <Col lg={4} md={12}>
                     <Form.Group>
                         <Form.Label className="small fw-bold text-muted text-uppercase">Search Records</Form.Label>
-                        <InputGroup className="shadow-sm border-0">
+                        <InputGroup>
                             <InputGroup.Text className="bg-white border-end-0 text-muted">
                                 <MdSearch size={20} />
                             </InputGroup.Text>
@@ -182,7 +170,7 @@ const BillLogs = () => {
                     <Form.Group>
                         <Form.Label className="small fw-bold text-muted text-uppercase">Payment</Form.Label>
                         <Form.Select
-                            className="shadow-sm border-0 py-2 shadow-none"
+                            className="shadow-sm py-2 shadow-none"
                             value={paymentFilter}
                             onChange={(e) => setPaymentFilter(e.target.value)}
                         >
@@ -199,7 +187,7 @@ const BillLogs = () => {
                 <Col lg={4} md={8}>
                     <Form.Group>
                         <Form.Label className="small fw-bold text-muted text-uppercase">Date Range</Form.Label>
-                        <InputGroup className="shadow-sm border-0">
+                        <InputGroup>
                             <Form.Control
                                 type="date"
                                 className="shadow-none border-end-0 py-2"
@@ -258,7 +246,14 @@ const BillLogs = () => {
                                         <td><Badge bg={bill.modeOfPayment === 'Cash' ? 'success' : 'info'} pill>{bill.modeOfPayment}</Badge></td>
                                         <td className="fw-bold text-dark">₹{bill.finalTotal?.toFixed(2)}</td>
                                         <td className="text-center">
-                                            <Button variant="outline-primary" size="sm" className="me-2" onClick={() => { setSelectedBill(bill); setShowViewModal(true); }}><MdVisibility /></Button>
+                                            <Button
+                                                variant="outline-primary"
+                                                size="sm"
+                                                className="me-2"
+                                                onClick={() => window.open(`/billpreview/${bill.id}`, '_blank')}
+                                            >
+                                                <MdVisibility />
+                                            </Button>
                                             <Button
                                                 variant="outline-dark"
                                                 size="sm"
@@ -277,124 +272,6 @@ const BillLogs = () => {
                     </Table>
                 </Card.Body>
             </Card>
-
-            {/* Redesigned Bill Details Modal */}
-            <Modal show={showViewModal} onHide={() => setShowViewModal(false)} size="fullscreen" centered>
-                <Modal.Header closeButton className="bg-light border-bottom-0 pt-4 px-4">
-                    <Modal.Title className="d-flex align-items-center">
-                        <div className="bg-darkblue text-white rounded-3 p-2 me-3 d-flex align-items-center justify-content-center" style={{ width: '45px', height: '45px' }}>
-                            <MdReceipt size={24} />
-                        </div>
-                        <div>
-                            <div className="fw-bold h5 mb-0 text-darkblue">Invoice #{selectedBill?.billNumber}</div>
-                            <div className="small text-muted fw-normal">{formatDate(selectedBill?.billingDate)} at {formatTime(selectedBill?.billingTime)}</div>
-                        </div>
-                    </Modal.Title>
-                </Modal.Header>
-                <Modal.Body className="px-4 py-4">
-                    {selectedBill && (
-                        <>
-                            {/* Metadata Sections */}
-                            <Row className="mb-4 g-3">
-                                <Col md={7}>
-                                    <div className="p-3 rounded-4 bg-light border-0 h-100">
-                                        <div className="text-uppercase small fw-bold text-muted mb-2 tracking-wider" style={{ letterSpacing: '1px' }}>
-                                            <MdPerson className="me-1" /> Customer Details
-                                        </div>
-                                        <h6 className="fw-bold mb-1">{selectedBill.customerName}</h6>
-                                        <div className="text-dark small mb-1">{selectedBill.customerNumber}</div>
-                                        <div className="text-muted small italic">{selectedBill.customerAddress || "No address provided"}</div>
-                                    </div>
-                                </Col>
-                                <Col md={5}>
-                                    <div className="p-3 rounded-4 bg-light border-0 h-100">
-                                        <div className="text-uppercase small fw-bold text-muted mb-2 tracking-wider" style={{ letterSpacing: '1px' }}>
-                                            <MdLocalShipping className="me-1" /> Logistics & Payment
-                                        </div>
-                                        <div className="d-flex justify-content-between mb-1 small">
-                                            <span className="text-muted">Payment:</span>
-                                            <span className="fw-bold text-primary">{selectedBill.modeOfPayment}</span>
-                                        </div>
-                                        <div className="d-flex justify-content-between small">
-                                            <span className="text-muted">Delivery:</span>
-                                            <span className="fw-bold">{selectedBill.modeOfDelivery}</span>
-                                        </div>
-                                    </div>
-                                </Col>
-                            </Row>
-
-                            {/* Itemized Detail Table */}
-                            <div className="table-responsive">
-                                <Table borderless className="align-middle">
-                                    <thead className="text-muted small text-uppercase" style={{ borderBottom: '2px solid #f8f9fa' }}>
-                                        <tr>
-                                            <th className="py-3 ps-0">Item Description</th>
-                                            <th className="py-3 text-center">Qty</th>
-                                            <th className="py-3 text-end">Unit Price</th>
-                                            <th className="py-3 text-end">Discount</th>
-                                            <th className="py-3 text-end pe-0">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {selectedBill.products.map((item, idx) => (
-                                            <tr key={idx} style={{ borderBottom: '1px solid #f8f9fa' }}>
-                                                <td className="py-3 ps-0 fw-bold">{item.name}</td>
-                                                <td className="py-3 text-center">{item.quantity}</td>
-                                                <td className="py-3 text-end">₹{item.unitPrice.toFixed(2)}</td>
-                                                <td className="py-3 text-end text-muted small">{item.discount}%</td>
-                                                <td className="py-3 text-end pe-0 fw-bold">₹{item.discountedTotal.toFixed(2)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </Table>
-                            </div>
-
-                            {/* Financial Summary */}
-                            <Row className="mt-3 justify-content-end">
-                                <Col md={5}>
-                                    <div className="d-flex justify-content-between mb-2 small">
-                                        <span className="text-muted">Subtotal:</span>
-                                        <span className="fw-bold">₹{selectedBill.overallTotal.toFixed(2)}</span>
-                                    </div>
-                                    <div className="d-flex justify-content-between mb-2 text-success small">
-                                        <span>Savings ({selectedBill.overallDiscount}%):</span>
-                                        <span className="fw-bold">-₹{(selectedBill.overallTotal - selectedBill.finalTotal).toFixed(2)}</span>
-                                    </div>
-                                    <div className="d-flex justify-content-between border-top pt-3 mt-2">
-                                        <span className="fw-bold fs-5">Grand Total:</span>
-                                        <span className="fw-bold fs-5 text-darkblue">₹{selectedBill.finalTotal.toFixed(2)}</span>
-                                    </div>
-                                </Col>
-                            </Row>
-
-                            {/* Restriction Notice for Walking Customers */}
-                            {selectedBill.customerName?.toLowerCase() === "walking customer" && (
-                                <div className="mt-3 p-2 bg-warning bg-opacity-10 border border-warning rounded-3 text-center small text-warning fw-bold">
-                                    Invoice Actions Disabled for Walking Customers
-                                </div>
-                            )}
-                        </>
-                    )}
-                </Modal.Body>
-                <Modal.Footer className="bg-light border-top-0 p-4">
-                    <Button variant="white" className="border px-4 py-2 me-auto" onClick={() => setShowViewModal(false)}>Close</Button>
-                    <div className="d-flex gap-2">
-                        {/* Only show actions if NOT a Walking Customer */}
-                        {selectedBill?.customerName?.toLowerCase() !== "walking customer" && (
-                            <>
-                                {selectedBill?.customerNumber && (
-                                    <Button variant="success" className="px-4 py-2 shadow-sm" onClick={() => openWhatsApp(selectedBill)}>
-                                        <MdMessage className="me-2" /> WhatsApp
-                                    </Button>
-                                )}
-                                <Button variant="darkblue" className="px-4 py-2 shadow-sm" onClick={() => handlePrint(selectedBill)}>
-                                    <MdFileDownload className="me-2" /> Download Invoice
-                                </Button>
-                            </>
-                        )}
-                    </div>
-                </Modal.Footer>
-            </Modal>
         </Container>
     );
 };

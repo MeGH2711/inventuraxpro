@@ -173,3 +173,26 @@ body {
 .border-lightgreen {
   border-color: rgb(0, 180, 39) !important;
 }
+
+/* INPUT GROUP */
+
+.input-group:focus-within {
+  box-shadow: 0 0 0 0.25rem rgba(10, 47, 79, 0.25) !important;
+  border-radius: 8px;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.input-group:focus-within .input-group-text {
+  border-color: var(--mainThemeColorLighterShade) !important;
+  color: var(--mainThemeColor) !important;
+  background-color: #fff !important;
+}
+
+.input-group:focus-within .form-control {
+  border-color: var(--mainThemeColorLighterShade) !important;
+  box-shadow: none !important;
+}
+
+.input-group.shadow-sm:focus-within {
+  box-shadow: 0 4px 12px rgba(10, 47, 79, 0.15), 0 0 0 0.25rem rgba(10, 47, 79, 0.2) !important;
+}

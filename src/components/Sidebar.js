@@ -14,7 +14,6 @@ import {
     MdHistoryEdu,
     MdInsights,
     MdPeople,
-    MdAccountBalanceWallet,
     MdChevronLeft,
     MdChevronRight,
     MdLogout,
@@ -60,7 +59,6 @@ const Sidebar = () => {
         { path: '/billlogs', icon: <MdHistoryEdu />, text: 'Bill Logs' },
         { path: '/analytics', icon: <MdInsights />, text: 'Analytics' },
         { path: '/customers', icon: <MdPeople />, text: 'Customers' },
-        { path: '/transactions', icon: <MdAccountBalanceWallet />, text: 'Transactions' },
         { path: '/setting', icon: <MdOutlineSettingsSuggest />, text: 'Settings' },
     ];
 

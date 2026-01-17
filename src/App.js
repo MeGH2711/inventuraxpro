@@ -13,9 +13,9 @@ import CompanyDetails from "./pages/CompanyDetails";
 import AccountSecurity from "./pages/AccountSecurity";
 import Billing from "./pages/Billing";
 import BillLogs from "./pages/BillLogs";
+import BillPreview from "./pages/BillPreview";
 import Analytics from "./pages/Analytics";
 import Customers from "./pages/Customers";
-import Transactions from "./pages/Transactions";
 
 import './css/style.css';
 
@@ -53,9 +53,9 @@ function App() {
 
                     <Route path="/billing" element={<Billing />} />
                     <Route path="/billlogs" element={<BillLogs />} />
+                    <Route path="/billpreview/:id" element={<BillPreview />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/customers" element={<Customers />} />
-                    <Route path="/transactions" element={<Transactions />} />
                     
                     <Route path="/" element={<Navigate to="/dashboard" />} />
                   </Routes>
