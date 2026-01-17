@@ -15,6 +15,7 @@ const BillLogs = () => {
     const [companyInfo, setCompanyInfo] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
     const [selectedBill, setSelectedBill] = useState(null);
+    const [paymentFilter, setPaymentFilter] = useState('');
 
     // Date Range States
     const [startDate, setStartDate] = useState('');
@@ -117,6 +118,7 @@ const BillLogs = () => {
         setSearchTerm('');
         setStartDate(absMinDate);
         setEndDate(absMaxDate);
+        setPaymentFilter('');
     };
 
     const filteredBills = bills.filter(bill => {
@@ -124,6 +126,8 @@ const BillLogs = () => {
             bill.billNumber?.toString().includes(searchTerm) ||
             bill.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             bill.customerNumber?.includes(searchTerm);
+
+        const matchesPayment = paymentFilter === '' || bill.modeOfPayment === paymentFilter;
 
         const billDate = bill.billingDate;
         let matchesDate = true;
@@ -136,7 +140,7 @@ const BillLogs = () => {
             matchesDate = billDate <= endDate;
         }
 
-        return matchesSearch && matchesDate;
+        return matchesSearch && matchesDate && matchesPayment; // Added matchesPayment
     });
 
     return (
@@ -146,7 +150,7 @@ const BillLogs = () => {
                     <h2 className="pageHeader mb-1">Bill Logs</h2>
                     <p className="text-muted small mb-0">View and manage previous customer transactions.</p>
                 </div>
-                {(searchTerm !== '' || startDate !== absMinDate || endDate !== absMaxDate) && (
+                {(searchTerm !== '' || startDate !== absMinDate || endDate !== absMaxDate || paymentFilter !== '') && (
                     <Button variant="outline-danger" size="sm" onClick={clearFilters} className="d-flex align-items-center gap-2 shadow-sm">
                         <MdClear /> Reset Filters
                     </Button>
@@ -154,43 +158,71 @@ const BillLogs = () => {
             </div>
 
             {/* Filter Toolbar */}
-            <Row className="g-3 mb-4">
-                <Col lg={4}>
-                    <InputGroup className="shadow-sm border-0">
-                        <InputGroup.Text className="bg-white border-end-0 text-muted"><MdSearch /></InputGroup.Text>
-                        <Form.Control
-                            placeholder="Search No, Name, or Phone..."
-                            className="border-start-0 shadow-none"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </InputGroup>
+            <Row className="g-3 mb-4 align-items-end">
+                {/* Primary Search - Occupies more space for visibility */}
+                <Col lg={4} md={12}>
+                    <Form.Group>
+                        <Form.Label className="small fw-bold text-muted text-uppercase">Search Records</Form.Label>
+                        <InputGroup className="shadow-sm border-0">
+                            <InputGroup.Text className="bg-white border-end-0 text-muted">
+                                <MdSearch size={20} />
+                            </InputGroup.Text>
+                            <Form.Control
+                                placeholder="Search No, Name, or Phone..."
+                                className="border-start-0 shadow-none py-2"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </InputGroup>
+                    </Form.Group>
                 </Col>
-                <Col lg={3}>
-                    <InputGroup className="shadow-sm border-0">
-                        <InputGroup.Text className="bg-white small fw-bold text-muted border-end-0">FROM</InputGroup.Text>
-                        <Form.Control
-                            type="date"
-                            className="shadow-none border-start-0"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                        />
-                    </InputGroup>
+
+                {/* Payment Method Dropdown */}
+                <Col lg={2} md={4}>
+                    <Form.Group>
+                        <Form.Label className="small fw-bold text-muted text-uppercase">Payment</Form.Label>
+                        <Form.Select
+                            className="shadow-sm border-0 py-2 shadow-none"
+                            value={paymentFilter}
+                            onChange={(e) => setPaymentFilter(e.target.value)}
+                        >
+                            <option value="">All Methods</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Online">Online</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Card">Card</option>
+                        </Form.Select>
+                    </Form.Group>
                 </Col>
-                <Col lg={3}>
-                    <InputGroup className="shadow-sm border-0">
-                        <InputGroup.Text className="bg-white small fw-bold text-muted border-end-0">TO</InputGroup.Text>
-                        <Form.Control
-                            type="date"
-                            className="shadow-none border-start-0"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                        />
-                    </InputGroup>
+
+                {/* Date Range - Grouped Together */}
+                <Col lg={4} md={8}>
+                    <Form.Group>
+                        <Form.Label className="small fw-bold text-muted text-uppercase">Date Range</Form.Label>
+                        <InputGroup className="shadow-sm border-0">
+                            <Form.Control
+                                type="date"
+                                className="shadow-none border-end-0 py-2"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                            />
+                            <InputGroup.Text className="bg-white border-start-0 border-end-0 text-muted px-2">
+                                to
+                            </InputGroup.Text>
+                            <Form.Control
+                                type="date"
+                                className="shadow-none border-start-0 py-2"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                            />
+                        </InputGroup>
+                    </Form.Group>
                 </Col>
-                <Col lg={2} className="d-flex align-items-center justify-content-end">
-                    <div className="text-muted small fw-bold">
-                        <MdFilterList className="me-1" /> {filteredBills.length} Results
+
+                {/* Result Counter */}
+                <Col lg={2} md={12} className="text-lg-end text-center pb-2">
+                    <div className="bg-light d-inline-block px-3 py-2 rounded-pill text-muted small fw-bold border">
+                        <MdFilterList className="me-1" /> {filteredBills.length} Results Found
                     </div>
                 </Col>
             </Row>
