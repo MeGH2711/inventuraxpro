@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
@@ -19,15 +19,43 @@ import Customers from "./pages/Customers";
 
 import './css/style.css';
 
-// 1. Create a Layout component to keep Sidebar persistent
-const Layout = ({ children }) => (
-  <div className="d-flex">
-    <Sidebar />
-    <div id="mainPageContent" className="flex-grow-1">
-      {children}
+// 1. Updated Layout component to handle dynamic titles
+const Layout = ({ children }) => {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Define your route-to-title mapping
+    const titleMap = {
+      '/dashboard': 'Dashboard | Inventurax',
+      '/products': 'Products | Inventurax',
+      '/setting': 'Settings | Inventurax',
+      '/setting/company': 'Company Details | Inventurax',
+      '/setting/security': 'Security | Inventurax',
+      '/billing': 'Billing | Inventurax',
+      '/billlogs': 'Bill Logs | Inventurax',
+      '/analytics': 'Analytics | Inventurax',
+      '/customers': 'Customers | Inventurax',
+    };
+
+    // Handle dynamic routes (like IDs) or static mapping
+    const currentPath = location.pathname;
+
+    if (currentPath.startsWith('/billpreview/')) {
+      document.title = 'Preview Bill | Inventurax';
+    } else {
+      document.title = titleMap[currentPath] || 'My App';
+    }
+  }, [location]); // Re-runs every time the URL changes
+
+  return (
+    <div className="d-flex">
+      <Sidebar />
+      <div id="mainPageContent" className="flex-grow-1">
+        {children}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 function App() {
   return (
@@ -37,7 +65,6 @@ function App() {
           <Route path="/" element={<Login />} />
 
           {/* 2. Wrap all protected routes in a way that Sidebar stays put */}
-          
           <Route
             path="/*"
             element={
@@ -56,7 +83,7 @@ function App() {
                     <Route path="/billpreview/:id" element={<BillPreview />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/customers" element={<Customers />} />
-                    
+
                     <Route path="/" element={<Navigate to="/dashboard" />} />
                   </Routes>
                 </Layout>

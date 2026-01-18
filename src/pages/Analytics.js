@@ -183,7 +183,7 @@ const Analytics = () => {
                                     className="badge rounded-pill shadow-sm d-flex align-items-center justify-content-between w-100"
                                     style={{
                                         backgroundColor: entry.color,
-                                        fontSize: '10px',
+                                        fontSize: '12px',
                                         fontWeight: '600',
                                         padding: '5px 8px',
                                         color: '#fff'
