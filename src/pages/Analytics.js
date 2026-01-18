@@ -171,6 +171,56 @@ const Analytics = () => {
         ? [...categoryData].sort((a, b) => b.value - a.value)[0]
         : { name: 'N/A', value: 0 };
 
+    const renderCustomLegend = (props) => {
+        const { payload } = props;
+        return (
+            <div className="ms-4" style={{ width: '320px' }}>
+                <Row className="g-2">
+                    {payload.map((entry, index) => (
+                        <Col xs={6} key={`item-${index}`}>
+                            <div className="d-flex align-items-center mb-1">
+                                <span
+                                    className="badge rounded-pill shadow-sm d-flex align-items-center justify-content-between w-100"
+                                    style={{
+                                        backgroundColor: entry.color,
+                                        fontSize: '10px',
+                                        fontWeight: '600',
+                                        padding: '5px 8px',
+                                        color: '#fff'
+                                    }}
+                                    title={`${entry.value}: ${entry.payload.value}`}
+                                >
+                                    {/* Category Name */}
+                                    <span className='ms-2' style={{
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        marginRight: '5px'
+                                    }}>
+                                        {entry.value}
+                                    </span>
+
+                                    {/* Product Count Badge */}
+                                    <span
+                                        className="bg-white text-dark rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                                        style={{
+                                            minWidth: '20px',
+                                            height: '20px',
+                                            fontSize: '9px',
+                                            padding: '2px'
+                                        }}
+                                    >
+                                        {entry.payload.value}
+                                    </span>
+                                </span>
+                            </div>
+                        </Col>
+                    ))}
+                </Row>
+            </div>
+        );
+    };
+
     return (
         <Container fluid className="py-4">
             <div className="mb-4">
@@ -219,9 +269,9 @@ const Analytics = () => {
                     </Row>
 
                     <Row className="g-3 mb-4">
-                        <Col md={4}><StatCard title="Total Revenue" value={totalRevenue} icon={<MdFunctions />} color="primary" /></Col>
-                        <Col md={4}><StatCard title="Avg Sales/Period" value={avgSales} icon={<MdTrendingUp />} color="success" /></Col>
-                        <Col md={4}><StatCard title="Peak Performance" value={peakSales} icon={<MdEvent />} color="warning" /></Col>
+                        <Col md={4}><SalesStat title="Total Revenue" value={totalRevenue} icon={<MdFunctions />} color="primary" /></Col>
+                        <Col md={4}><SalesStat title="Avg Sales/Period" value={avgSales} icon={<MdTrendingUp />} color="success" /></Col>
+                        <Col md={4}><SalesStat title="Peak Performance" value={peakSales} icon={<MdEvent />} color="warning" /></Col>
                     </Row>
 
                     <Card className="border-0 shadow-sm rounded-3 p-3">
@@ -271,6 +321,7 @@ const Analytics = () => {
                         <Col md={8} lg={9}>
                             <Card className="border-0 shadow-sm rounded-3 p-3 h-100">
                                 <div className="d-flex align-items-center mb-2">
+                                    <MdPieChart className="text-primary me-2" size={20} />
                                     <span className="fw-bold small text-uppercase text-muted">Category Spread</span>
                                 </div>
                                 {loading ? <div className="text-center py-5"><Spinner animation="border" variant="success" /></div> : (
@@ -296,8 +347,7 @@ const Analytics = () => {
                                                     verticalAlign="middle"
                                                     align="right"
                                                     layout="vertical"
-                                                    iconType="circle"
-                                                    wrapperStyle={{ paddingLeft: '30px', fontSize: '13px' }}
+                                                    content={renderCustomLegend}
                                                 />
                                             </PieChart>
                                         </ResponsiveContainer>
@@ -316,7 +366,7 @@ const Analytics = () => {
 };
 
 // Main Stat Card Component
-const StatCard = ({ title, value, icon, color }) => (
+const SalesStat = ({ title, value, icon, color }) => (
     <Card className="border-0 shadow-sm rounded-3 p-3 bg-white h-100">
         <div className="d-flex align-items-center justify-content-between">
             <div>
