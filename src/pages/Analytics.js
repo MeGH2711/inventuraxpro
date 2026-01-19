@@ -184,6 +184,17 @@ const Analytics = () => {
     const peakQty = productSalesData.length > 0 ? Math.max(...productSalesData.map(d => d.quantity)) : 0;
     const bestSellerName = getTopSellingProduct(rawBills);
 
+    const resetProductFilters = () => {
+        setProductStartDate(productMinDate);
+        setProductEndDate(productMaxDate);
+        setProductTimeFrame('daily');
+    };
+
+    const isProductFilterActive =
+        productStartDate !== productMinDate ||
+        productEndDate !== productMaxDate ||
+        productTimeFrame !== 'daily';
+
     // --- 5. DATA FETCHING & SYNC ---
     useEffect(() => {
         const fetchData = async () => {
@@ -415,8 +426,22 @@ const Analytics = () => {
 
             {/* SECTION 3: PRODUCT SALES ANALYTICS */}
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
-                <Card.Header className="bg-white border-bottom py-3 px-4">
-                    <div className="d-flex align-items-center gap-2"><MdTrendingUp className="text-warning" size={24} /><h5 className="mb-0 fw-bold">Product Sales Analytics</h5></div>
+                <Card.Header className="bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-2">
+                        <MdTrendingUp className="text-warning" size={24} />
+                        <h5 className="mb-0 fw-bold">Product Sales Analytics</h5>
+                    </div>
+                    {/* ADDED RESET BUTTON HERE */}
+                    {isProductFilterActive && (
+                        <Button
+                            variant="link"
+                            size="sm"
+                            onClick={resetProductFilters}
+                            className="text-danger text-decoration-none p-0"
+                        >
+                            <MdClear /> Reset View
+                        </Button>
+                    )}
                 </Card.Header>
                 <Card.Body className="p-4 bg-light bg-opacity-10">
                     <Row className="g-3 mb-4">
@@ -430,7 +455,6 @@ const Analytics = () => {
                     <Row className="g-3 mb-4">
                         <Col md={4}><Form.Group><Form.Label className="small fw-bold text-muted">SELECT PRODUCT</Form.Label>
                             <Form.Select size="sm" value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
-                                <option value="">-- Select Product --</option>
                                 {allProductNames.map((p, i) => (<option key={i} value={p}>{p}</option>))}
                             </Form.Select></Form.Group></Col>
                         <Col md={4}><Form.Group><Form.Label className="small fw-bold text-muted">DATE RANGE</Form.Label>
@@ -451,7 +475,8 @@ const Analytics = () => {
                                 <ResponsiveContainer>
                                     <LineChart data={productSalesData}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <XAxis dataKey="name" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><RechartsTooltip />
+                                        <XAxis dataKey="name" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} />
+                                        <RechartsTooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
                                         <Line type="linear" dataKey="quantity" stroke="#f59f00" strokeWidth={3} dot={{ r: 4 }} />
                                     </LineChart>
                                 </ResponsiveContainer>
