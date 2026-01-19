@@ -6,7 +6,8 @@ import {
 } from 'recharts';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { MdTimeline, MdTrendingUp, MdEvent, MdFunctions, MdClear, MdDateRange, MdAnalytics, MdPieChart, MdLayers, MdLabel } from 'react-icons/md';
+import { MdTimeline, MdTrendingUp, MdEvent, MdFunctions, MdClear, MdDateRange, MdAnalytics, MdPieChart, MdLayers } from 'react-icons/md';
+import { BiSolidCategory } from "react-icons/bi";
 
 // --- Custom Active Shape for the Pie Chart ---
 const renderActiveShape = (props) => {
@@ -283,11 +284,11 @@ const Analytics = () => {
                             <div style={{ width: '100%', height: 350 }}>
                                 <ResponsiveContainer>
                                     <LineChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#bababa" />
                                         <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6c757d' }} axisLine={false} tickLine={false} />
                                         <YAxis tick={{ fontSize: 11, fill: '#6c757d' }} tickFormatter={(v) => `₹${v.toLocaleString()}`} axisLine={false} tickLine={false} />
                                         <RechartsTooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                        <Line type="monotone" dataKey="sales" stroke="#0d6efd" strokeWidth={3} dot={{ r: 4 }} />
+                                        <Line type="linear" dataKey="sales" stroke="#0d6efd" strokeWidth={3} dot={{ r: 4 }} />
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
@@ -312,8 +313,8 @@ const Analytics = () => {
                     <Row className="g-4">
                         <Col md={4} lg={3}>
                             <div className="d-flex flex-column gap-3 h-100">
-                                <InventoryStat title="Total Items" value={totalProducts} subtitle="In catalog" icon={<MdLayers />} color="dark" />
-                                <InventoryStat title="Categories" value={categoryData.length} subtitle="Product groups" icon={<MdLabel />} color="success" />
+                                <InventoryStat title="Total Items" value={totalProducts} subtitle="In catalog" icon={<MdLayers />} color="danger" />
+                                <InventoryStat title="Categories" value={categoryData.length} subtitle="Product groups" icon={<BiSolidCategory />} color="success" />
                                 <InventoryStat title="Top Category" value={topCategory.name} subtitle={`${topCategory.value} Items`} icon={<MdTrendingUp />} color="primary" isNumeric={false} />
                             </div>
                         </Col>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Table, Badge, Spinner } from 'react-bootstrap';
 import {
     MdTrendingUp, MdPeople, MdReceipt, MdInventory,
-    MdAccountBalanceWallet, MdArrowForward, MdLoop, MdInsights
+    MdAccountBalanceWallet, MdArrowForward, MdLoop, MdInsights, MdOutlineSettingsSuggest
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 
@@ -220,11 +220,11 @@ const Dashboard = () => {
                                 <Button variant="outline-darkblue" className="text-start py-3 d-flex align-items-center" onClick={() => navigate('/products')}>
                                     <MdInventory className="me-3" size={20} /> Manage Inventory
                                 </Button>
-                                <Button variant="outline-darkblue" className="text-start py-3 d-flex align-items-center" onClick={() => navigate('/setting')}>
-                                    <MdTrendingUp className="me-3" size={20} /> Settings
-                                </Button>
                                 <Button variant="outline-darkblue" className="text-start py-3 d-flex align-items-center" onClick={() => navigate('/analytics')}>
                                     <MdInsights className="me-3" size={20} /> Analytics
+                                </Button>
+                                <Button variant="outline-darkblue" className="text-start py-3 d-flex align-items-center" onClick={() => navigate('/setting')}>
+                                    <MdOutlineSettingsSuggest className="me-3" size={20} /> Settings
                                 </Button>
                             </div>
                         </Card.Body>
