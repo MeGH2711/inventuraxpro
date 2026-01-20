@@ -151,7 +151,11 @@ const Billing = () => {
                 c.name?.toLowerCase().includes(value.toLowerCase()) ||
                 c.phone?.includes(value)
             );
-            setCustomerSuggestions(filtered);
+
+            // Remove duplicates by Phone Number before setting suggestions
+            const uniqueFiltered = Array.from(new Map(filtered.map(item => [item.phone, item])).values());
+
+            setCustomerSuggestions(uniqueFiltered);
             setShowCustomerSuggestions({
                 name: field === 'customerName',
                 phone: field === 'contactNumber'
@@ -260,28 +264,42 @@ const Billing = () => {
                 createdAt: serverTimestamp(),
             };
 
-            await addDoc(collection(db, "bills"), billSchema);
+            // Save to Firestore and get the reference
+            const docRef = await addDoc(collection(db, "bills"), billSchema);
+            const billId = docRef.id; // This is the unique Document ID
+
             setNextBillNumber(billNumber + 1);
 
-            // Update local customer list for immediate suggestion in next bill
-            setAllCustomers(prev => [{
-                name: billingData.customerName,
-                phone: billingData.contactNumber,
-                address: billingData.customerAddress
-            }, ...prev]);
+            // Update local customer list
+            setAllCustomers(prev => {
+                const exists = prev.some(c => c.phone === billingData.contactNumber);
+                if (!exists && billingData.contactNumber) {
+                    return [{
+                        name: billingData.customerName,
+                        phone: billingData.contactNumber,
+                        address: billingData.customerAddress
+                    }, ...prev];
+                }
+                return prev;
+            });
 
+            // Clear local state
             setCart([]);
             setOverallDiscount(0);
+
             setBillingData({
-                ...billingData,
                 customerName: '',
                 contactNumber: '',
                 customerAddress: '',
                 billingDate: new Date().toISOString().split('T')[0],
-                billingTime: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                billingTime: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+                deliveryMode: 'In-house',
+                paymentMode: 'UPI'
             });
 
-            return billNumber;
+            setManualTotal("");
+
+            return { billNumber, billId };
         } catch (error) {
             console.error("Error saving bill:", error);
             setToast({ show: true, message: 'Error saving transaction.', bg: 'danger' });
@@ -291,13 +309,27 @@ const Billing = () => {
         }
     };
 
-    const openWhatsApp = () => {
+    const openWhatsApp = (billId) => {
+        const baseUrl = window.location.origin;
+        const shareLink = `${baseUrl}/view/invoice/${billId}`;
+
         if (lastSavedBill?.billingData?.contactNumber) {
             const number = lastSavedBill.billingData.contactNumber.replace(/\D/g, '');
-            const message = `Hello ${lastSavedBill.billingData.customerName || 'Customer'}, thank you for your purchase at ${companyInfo?.brandName || "De Baker's & More"}! Your bill total is ₹${lastSavedBill.finalCalculatedTotal.toFixed(2)}.`;
-            window.open(`https://wa.me/91${number}?text=${encodeURIComponent(message)}`, '_blank');
-        } else {
-            setToast({ show: true, message: 'No contact number provided for WhatsApp.', bg: 'warning' });
+            const brandName = companyInfo?.brandName || "De Baker's & More"; //
+
+            // Professional Template
+            const message = `Hello ${lastSavedBill.billingData.customerName || 'Customer'},
+
+Thank you for choosing ${brandName}!
+
+Total Amount: ₹${lastSavedBill.finalCalculatedTotal.toFixed(2)}
+
+You can view and download your digital invoice here:
+${shareLink}
+
+We look forward to serving you again soon!`;
+
+            window.open(`https://wa.me/91${number}?text=${encodeURIComponent(message)}`, '_blank'); //
         }
     };
 
@@ -520,13 +552,31 @@ const Billing = () => {
                                 variant="darkblue" size="lg" className="py-3 shadow-sm"
                                 disabled={loading}
                                 onClick={async () => {
-                                    const billNum = await saveBillToFirestore();
-                                    downloadInvoicePDF(
-                                        billNum, lastSavedBill.billingData, lastSavedBill.cart,
-                                        lastSavedBill.subTotal, lastSavedBill.overallDiscount, lastSavedBill.finalCalculatedTotal
-                                    );
-                                    setShowPostSaveModal(false);
-                                    setToast({ show: true, message: `Bill #${billNum} saved and downloading...`, bg: 'success' });
+                                    try {
+                                        // 1. Destructure BOTH billNumber and billId from the save function
+                                        const { billNumber, billId } = await saveBillToFirestore();
+
+                                        // 2. Use billNumber (the number) for the PDF generation
+                                        downloadInvoicePDF(
+                                            billNumber,
+                                            lastSavedBill.billingData,
+                                            lastSavedBill.cart,
+                                            lastSavedBill.subTotal,
+                                            lastSavedBill.overallDiscount,
+                                            lastSavedBill.finalCalculatedTotal
+                                        );
+
+                                        setShowPostSaveModal(false);
+
+                                        // 3. Use billNumber (the number) for the Toast message
+                                        setToast({
+                                            show: true,
+                                            message: `Bill #${billNumber} saved and downloading...`,
+                                            bg: 'success'
+                                        });
+                                    } catch (error) {
+                                        console.error("Save & Print failed", error);
+                                    }
                                 }}
                             >
                                 <MdFileDownload className="me-2" /> {loading ? 'Saving...' : 'Save & Print Invoice'}
@@ -540,9 +590,9 @@ const Billing = () => {
                                     className="w-100 py-2"
                                     disabled={loading}
                                     onClick={async () => {
-                                        const billNum = await saveBillToFirestore();
+                                        const { billNumber } = await saveBillToFirestore();
                                         setShowPostSaveModal(false);
-                                        setToast({ show: true, message: `Bill #${billNum} saved successfully!`, bg: 'success' });
+                                        setToast({ show: true, message: `Bill #${billNumber} saved successfully!`, bg: 'success' });
                                     }}
                                 >
                                     <MdSave className="me-2" /> {loading ? 'Saving...' : 'Save & Close'}
@@ -550,8 +600,26 @@ const Billing = () => {
                             </div>
                             {isCustomerDataComplete && (
                                 <div className="col-6">
-                                    <Button variant="success" className="w-100 py-2" onClick={openWhatsApp}>
-                                        <MdMessage className="me-2" /> WhatsApp
+                                    <Button
+                                        variant="success"
+                                        className="w-100 py-2"
+                                        disabled={loading}
+                                        onClick={async () => {
+                                            try {
+                                                // 1. Save the bill first and get the ID
+                                                const result = await saveBillToFirestore();
+
+                                                // 2. Pass the new billId to the WhatsApp function
+                                                openWhatsApp(result.billId);
+
+                                                setShowPostSaveModal(false);
+                                                setToast({ show: true, message: `Bill #${result.billNumber} saved and shared!`, bg: 'success' });
+                                            } catch (e) {
+                                                console.error("WhatsApp flow failed", e);
+                                            }
+                                        }}
+                                    >
+                                        <MdMessage className="me-2" /> {loading ? 'Saving...' : 'Save & WhatsApp'}
                                     </Button>
                                 </div>
                             )}

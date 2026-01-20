@@ -6,6 +6,7 @@ import PrivateRoute from "./components/PrivateRoute";
 
 // Pages
 import Login from "./pages/Login";
+import PublicBill from "./pages/PublicBill";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Setting from "./pages/Settings";
@@ -63,6 +64,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/view/invoice/:id" element={<PublicBill />} />
 
           {/* 2. Wrap all protected routes in a way that Sidebar stays put */}
           <Route
