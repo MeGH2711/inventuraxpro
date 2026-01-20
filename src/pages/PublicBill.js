@@ -67,6 +67,30 @@ const PublicBill = () => {
         }, company);
     };
 
+    const formatDate = (dateString) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        }).replace(/ /g, ' ');
+    };
+
+    const formatTime = (timeString) => {
+        if (!timeString) return "";
+        // Creates a dummy date to use the localization formatter
+        const [hours, minutes] = timeString.split(':');
+        const date = new Date();
+        date.setHours(parseInt(hours), parseInt(minutes));
+
+        return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    };
+
     return (
         <div className="min-vh-100" style={{ backgroundColor: '#F8F9FA', paddingBottom: '80px' }}>
             {/* Desktop Navbar */}
@@ -176,9 +200,13 @@ const PublicBill = () => {
                                             <span className="text-muted">Delivery:</span>
                                             <span className="fw-bold">{bill.modeOfDelivery}</span>
                                         </div>
+                                        <div className="d-flex justify-content-between small mb-1">
+                                            <span className="text-muted">Time:</span>
+                                            <span className="fw-bold">{formatTime(bill.billingTime)}</span>
+                                        </div>
                                         <div className="d-flex justify-content-between small">
                                             <span className="text-muted">Date:</span>
-                                            <span className="fw-bold">{bill.billingDate}</span>
+                                            <span className="fw-bold">{formatDate(bill.billingDate)}</span>
                                         </div>
                                     </Card.Body>
                                 </Card>
@@ -212,7 +240,10 @@ const PublicBill = () => {
 
                                     <div className="text-center mt-4">
                                         <div className="small opacity-50 mb-1">Issued by {company?.brandName}</div>
-                                        <div className="small opacity-50"><MdCalendarToday size={12} className="me-1" /> {bill.billingDate} • {bill.billingTime}</div>
+                                        <div className="small opacity-50">
+                                            <MdCalendarToday size={12} className="me-1" />
+                                            {formatDate(bill.billingDate)} • {formatTime(bill.billingTime)}
+                                        </div>
                                     </div>
                                 </Card.Body>
                             </Card>
