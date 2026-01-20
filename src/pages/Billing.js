@@ -554,7 +554,7 @@ We look forward to serving you again soon!`;
                                 onClick={async () => {
                                     try {
                                         // 1. Destructure BOTH billNumber and billId from the save function
-                                        const { billNumber, billId } = await saveBillToFirestore();
+                                        const { billNumber } = await saveBillToFirestore();
 
                                         // 2. Use billNumber (the number) for the PDF generation
                                         downloadInvoicePDF(
