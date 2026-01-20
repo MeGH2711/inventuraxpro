@@ -146,7 +146,7 @@ export const generateInvoice = async (data, company = {}) => {
     doc.setTextColor(0, 0, 255).setFont("helvetica", "bold"); // Blue for links
 
     // Instagram Link
-    const igText = `Instagram: ${company?.instagramName || "@de.bakers.and.more"}`;
+    const igText = `Instagram: ${company?.instagramName || "@YourInstaHandle"}`;
     const igWidth = doc.getTextWidth(igText);
     const igX = (pageWidth / 2) - igWidth - 5;
     doc.text(igText, igX, footerY + 5);
@@ -156,7 +156,7 @@ export const generateInvoice = async (data, company = {}) => {
     }
 
     // YouTube Link
-    const ytText = `YouTube: ${company?.youtubeName || "@VimalDeBakers"}`;
+    const ytText = `YouTube: ${company?.youtubeName || "@YourYoutubeHandle"}`;
     const ytWidth = doc.getTextWidth(ytText);
     const ytX = (pageWidth / 2) + 5;
     doc.text(ytText, ytX, footerY + 5);

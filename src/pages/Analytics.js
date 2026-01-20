@@ -448,9 +448,30 @@ const Analytics = () => {
                         <Col md={3}>
                             <InventoryStat title="Best Seller" value={bestSellerName || 'N/A'} subtitle="Overall top performer" icon={<MdTrendingUp />} color="success" isNumeric={false} />
                         </Col>
-                        <Col md={3}><InventoryStat title="Total Units Sold" value={totalQtySold} subtitle={`For ${selectedProduct || 'selected item'}`} icon={<MdFunctions />} color="warning" /></Col>
-                        <Col md={3}><InventoryStat title={`Avg Units / ${productTimeFrame}`} value={avgQtyPerPeriod.toFixed(1)} subtitle="Sales velocity" icon={<MdTrendingUp />} color="info" /></Col>
-                        <Col md={3}><InventoryStat title="Peak Demand" value={peakQty} subtitle={`Max units in ${productTimeFrame}`} icon={<MdEvent />} color="danger" /></Col>
+                        <Col md={3}>
+                            <InventoryStat
+                                title="Total Units Sold"
+                                value={totalQtySold}
+                                subtitle={`For ${selectedProduct || 'selected item'}`}
+                                icon={<MdFunctions />}
+                                color="warning" />
+                        </Col>
+                        <Col md={3}>
+                            <InventoryStat
+                                title={`Avg Units / ${productTimeFrame}`}
+                                value={avgQtyPerPeriod.toFixed(1)}
+                                subtitle={`Sales velocity for ${selectedProduct || 'selected item'}`}
+                                icon={<MdTrendingUp />}
+                                color="info" />
+                        </Col>
+                        <Col md={3}>
+                            <InventoryStat
+                                title="Peak Demand"
+                                value={peakQty}
+                                subtitle={`Max units in ${productTimeFrame} for ${selectedProduct || 'selected item'}`}
+                                icon={<MdEvent />}
+                                color="danger" />
+                        </Col>
                     </Row>
                     <Row className="g-3 mb-4">
                         <Col md={4}><Form.Group><Form.Label className="small fw-bold text-muted">SELECT PRODUCT</Form.Label>
