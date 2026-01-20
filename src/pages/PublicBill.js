@@ -53,7 +53,12 @@ const PublicBill = () => {
     const handleDownload = () => {
         generateInvoice({
             nextBillNumber: bill.billNumber,
-            billingData: { ...bill, contactNumber: bill.customerNumber },
+            billingData: {
+                ...bill,
+                contactNumber: bill.customerNumber,
+                paymentMode: bill.modeOfPayment,
+                deliveryMode: bill.modeOfDelivery
+            },
             cart: bill.products.map(p => ({
                 name: p.name,
                 qty: p.quantity,

@@ -4,6 +4,7 @@ import {
     MdSearch,
     MdVisibility, MdPrint, MdFilterList, MdClear
 } from 'react-icons/md';
+import { FaWhatsapp } from "react-icons/fa";
 import { db } from '../firebaseConfig';
 import { collection, query, orderBy, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 import { generateInvoice } from '../utils/generateInvoice';
@@ -100,6 +101,30 @@ const BillLogs = () => {
             finalCalculatedTotal: bill.finalTotal
         };
         generateInvoice(invoiceData, companyInfo);
+    };
+
+    const openWhatsApp = (bill) => {
+        const baseUrl = window.location.origin;
+        const shareLink = `${baseUrl}/view/invoice/${bill.id}`;
+
+        if (bill.customerNumber) {
+            const number = bill.customerNumber.replace(/\D/g, '');
+            const brandName = companyInfo?.brandName || "De Baker's & More";
+
+            // Professional Template
+            const message = `Hello ${bill.customerName || 'Customer'},
+
+Thank you for choosing ${brandName}!
+
+Total Amount: ₹${bill.finalTotal.toFixed(2)}
+
+You can view and download your digital invoice here:
+${shareLink}
+
+We look forward to serving you again soon!`;
+
+            window.open(`https://wa.me/91${number}?text=${encodeURIComponent(message)}`, '_blank');
+        }
     };
 
     const clearFilters = () => {
@@ -209,7 +234,7 @@ const BillLogs = () => {
 
                 {/* Result Counter */}
                 <Col lg={2} md={12} className="text-lg-end text-center pb-2">
-                    <div className="bg-light d-inline-block px-3 py-2 rounded-pill text-muted small fw-bold border">
+                    <div className="bg-light px-3 py-2 d-flex justify-content-center align-items-center rounded-pill text-muted small fw-bold border">
                         <MdFilterList className="me-1" /> {filteredBills.length} Results Found
                     </div>
                 </Col>
@@ -254,6 +279,18 @@ const BillLogs = () => {
                                             >
                                                 <MdVisibility />
                                             </Button>
+
+                                            {/* WhatsApp Button */}
+                                            <Button
+                                                variant="outline-success"
+                                                size="sm"
+                                                className="me-2"
+                                                onClick={() => openWhatsApp(bill)}
+                                                disabled={!bill.customerNumber || bill.customerName?.toLowerCase() === "walking customer"}
+                                            >
+                                                <FaWhatsapp />
+                                            </Button>
+
                                             <Button
                                                 variant="outline-dark"
                                                 size="sm"
