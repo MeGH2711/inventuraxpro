@@ -54,6 +54,8 @@ const Billing = () => {
         paymentMode: 'UPI'
     });
 
+    const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+
     // Fetch initial data
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -133,12 +135,36 @@ const Billing = () => {
     const handleSearch = (e) => {
         const value = e.target.value;
         setSearchTerm(value);
+        setActiveSuggestionIndex(-1); // Reset index on new search
         if (value.length > 0) {
             const filtered = products.filter(p => p.name.toLowerCase().includes(value.toLowerCase()));
             setSuggestions(filtered);
             setShowSuggestions(true);
         } else {
             setSuggestions([]);
+            setShowSuggestions(false);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        // If suggestions aren't showing, do nothing
+        if (!showSuggestions || suggestions.length === 0) return;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setActiveSuggestionIndex(prev =>
+                prev < suggestions.length - 1 ? prev + 1 : prev
+            );
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setActiveSuggestionIndex(prev => (prev > 0 ? prev - 1 : 0));
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            if (activeSuggestionIndex >= 0 && activeSuggestionIndex < suggestions.length) {
+                selectProduct(suggestions[activeSuggestionIndex]);
+                setActiveSuggestionIndex(-1);
+            }
+        } else if (e.key === "Escape") {
             setShowSuggestions(false);
         }
     };
@@ -435,13 +461,33 @@ We look forward to serving you again soon!`;
                         <Card.Header className="bg-white border-0 pt-4 px-4 position-relative">
                             <div className="input-group" ref={suggestionRef}>
                                 <span className="input-group-text bg-light border-0"><MdSearch /></span>
-                                <Form.Control placeholder="Type product name to add..." value={searchTerm} onChange={handleSearch} className="bg-light border-0 shadow-none py-2" autoComplete="off" />
+                                <Form.Control
+                                    placeholder="Type product name to add..."
+                                    value={searchTerm}
+                                    onChange={handleSearch}
+                                    onKeyDown={handleKeyDown}
+                                    className="bg-light border-0 shadow-none py-2"
+                                    autoComplete="off"
+                                />
                                 {showSuggestions && (
                                     <ListGroup className="position-absolute w-100 shadow-lg" style={{ top: '100%', left: 0, zIndex: 1060 }}>
-                                        {suggestions.map(p => (
-                                            <ListGroup.Item key={p.id} action onClick={() => selectProduct(p)} className="d-flex justify-content-between align-items-center">
-                                                <div><span className="fw-bold">{p.name}</span><span className="text-muted small ms-2">[{p.unitValue} {p.unitType === 'piece' ? 'pcs' : 'gms'}]</span></div>
-                                                <span className="badge bg-darkblue rounded-pill">₹{p.price}</span>
+                                        {suggestions.map((p, index) => (
+                                            <ListGroup.Item
+                                                key={p.id}
+                                                action
+                                                onClick={() => selectProduct(p)}
+                                                className={`d-flex justify-content-between align-items-center ${activeSuggestionIndex === index ? 'active bg-primary text-white' : ''}`}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <div>
+                                                    <span className={activeSuggestionIndex === index ? 'text-white' : 'fw-bold'}>{p.name}</span>
+                                                    <span className={`small ms-2 ${activeSuggestionIndex === index ? 'text-white-50' : 'text-muted'}`}>
+                                                        [{p.unitValue} {p.unitType === 'piece' ? 'pcs' : 'gms'}]
+                                                    </span>
+                                                </div>
+                                                <span className={`badge rounded-pill ${activeSuggestionIndex === index ? 'bg-white text-primary' : 'bg-darkblue'}`}>
+                                                    ₹{p.price}
+                                                </span>
                                             </ListGroup.Item>
                                         ))}
                                     </ListGroup>
