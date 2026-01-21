@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, InputGroup, Form, Badge, Spinner } from 'react-bootstrap';
 import {
-    MdSearch,
-    MdVisibility, MdPrint, MdFilterList, MdClear
+    MdSearch, MdVisibility, MdPrint,
+    MdFilterList, MdClear, MdDeleteOutline
 } from 'react-icons/md';
 import { FaWhatsapp } from "react-icons/fa";
 import { db } from '../firebaseConfig';
-import { collection, query, orderBy, getDocs, limit, doc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, limit, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { generateInvoice } from '../utils/generateInvoice';
 
 const BillLogs = () => {
@@ -124,6 +124,25 @@ ${shareLink}
 We look forward to serving you again soon!`;
 
             window.open(`https://wa.me/91${number}?text=${encodeURIComponent(message)}`, '_blank');
+        }
+    };
+
+    const handleDelete = async (billId, billNumber) => {
+        const confirmDelete = window.confirm(`Are you sure you want to delete Bill #${billNumber}? This action cannot be undone.`);
+
+        if (confirmDelete) {
+            try {
+                // Delete from Firestore
+                await deleteDoc(doc(db, "bills", billId));
+
+                // Update local state to remove the bill from the list
+                setBills(prevBills => prevBills.filter(bill => bill.id !== billId));
+
+                alert(`Bill #${billNumber} deleted successfully.`);
+            } catch (error) {
+                console.error("Error deleting bill:", error);
+                alert("Failed to delete the bill. Please try again.");
+            }
         }
     };
 
@@ -292,10 +311,20 @@ We look forward to serving you again soon!`;
                                             <Button
                                                 variant="outline-dark"
                                                 size="sm"
+                                                className="me-2"
                                                 onClick={() => handlePrint(bill)}
                                                 disabled={bill.customerName?.toLowerCase() === "walking customer"}
                                             >
                                                 <MdPrint />
+                                            </Button>
+
+                                            <Button
+                                                variant="outline-danger"
+                                                size="sm"
+                                                onClick={() => handleDelete(bill.id, bill.billNumber)}
+                                                title="Delete Bill"
+                                            >
+                                                <MdDeleteOutline />
                                             </Button>
                                         </td>
                                     </tr>
