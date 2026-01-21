@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Container, Row, Col, Card, Form, Spinner, Button, InputGroup, Table } from 'react-bootstrap';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, Sector, Legend
+    PieChart, Pie, Cell, Sector, Legend, BarChart, Bar
 } from 'recharts';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import {
     MdTimeline, MdTrendingUp, MdEvent, MdFunctions, MdClear,
     MdDateRange, MdAnalytics, MdPieChart, MdLayers, MdBarChart,
-    MdTableRows
+    MdTableRows, MdReceipt
 } from 'react-icons/md';
 import { BiSolidCategory } from "react-icons/bi";
 
@@ -38,6 +38,8 @@ const Analytics = () => {
     // --- 1. SHARED STATE ---
     const [loading, setLoading] = useState(true);
     const [rawBills, setRawBills] = useState([]);
+
+    const [products, setProducts] = useState([]);
 
     // --- 2. REVENUE REPORT STATE & LOGIC ---
     const [chartData, setChartData] = useState([]);
@@ -121,6 +123,7 @@ const Analytics = () => {
 
     // --- 4. PRODUCT SALES ANALYTICS STATE & LOGIC ---
     const [productSalesData, setProductSalesData] = useState([]);
+    const [productViewMode, setProductViewMode] = useState('chart');
     const [selectedProduct, setSelectedProduct] = useState('');
     const [productTimeFrame, setProductTimeFrame] = useState('daily');
     const [allProductNames, setAllProductNames] = useState([]);
@@ -178,6 +181,103 @@ const Analytics = () => {
         setProductSalesData(Object.keys(aggregation).map(key => ({ name: key, quantity: aggregation[key] })));
     }, []);
 
+    // Pagination state for Top Selling Products chart
+    const [topProductsIndex, setTopProductsIndex] = useState(0);
+    const pageSize = 10;
+
+    const [topProductsStartDate, setTopProductsStartDate] = useState('');
+    const [topProductsEndDate, setTopProductsEndDate] = useState('');
+
+    const [topProductsCategory, setTopProductsCategory] = useState('All');
+
+    const allTopProducts = useMemo(() => {
+        const productMap = {};
+
+        // 1. Populate the map to fix the 'unused-vars' warning 
+        // This also speeds up lookup from O(N) to O(1)
+        const nameToCategoryMap = {};
+        products.forEach(p => {
+            nameToCategoryMap[p.name] = p.category;
+        });
+
+        // 2. Filter bills by date
+        const filteredBills = rawBills.filter(bill => {
+            const billDate = bill.billingDate;
+            return (!topProductsStartDate || billDate >= topProductsStartDate) &&
+                (!topProductsEndDate || billDate <= topProductsEndDate);
+        });
+
+        // 3. Aggregate product quantities
+        filteredBills.forEach(bill => {
+            bill.products?.forEach(p => {
+                if (p.name) {
+                    // Use the map here instead of .find()
+                    const category = nameToCategoryMap[p.name] || 'Uncategorized';
+                    const matchesCategory = topProductsCategory === 'All' || category === topProductsCategory;
+
+                    if (matchesCategory) {
+                        productMap[p.name] = (productMap[p.name] || 0) + (p.quantity || 0);
+                    }
+                }
+            });
+        });
+
+        return Object.entries(productMap)
+            .map(([name, quantity]) => ({ name, quantity }))
+            .sort((a, b) => b.quantity - a.quantity);
+    }, [rawBills, topProductsStartDate, topProductsEndDate, topProductsCategory, products]);
+
+    const visibleTopProducts = allTopProducts.slice(topProductsIndex, topProductsIndex + pageSize);
+
+    const CustomBarTooltip = ({ active, payload }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white p-3 shadow-lg rounded-4 border-0" style={{ minWidth: '180px' }}>
+                    <p className="text-uppercase fw-bold text-muted mb-0" style={{ fontSize: '10px', letterSpacing: '0.05em' }}>
+                        Product Details
+                    </p>
+                    <div className="d-flex align-items-center justify-content-between mb-1">
+                        <div className="gap-2">
+                            <div className="rounded-circle" style={{ width: '8px', height: '8px', backgroundColor: payload[0].fill }}></div>
+                            <span className="fw-medium text-dark small">{payload[0].payload.name}</span>
+                        </div>
+                    </div>
+                    <div className="d-flex align-items-center justify-content-between mt-1">
+                        <span className="text-muted small">Units Sold:</span>
+                        <span className="fw-bold text-primary fs-5">
+                            {payload[0].value.toLocaleString()}
+                        </span>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    const [paymentModeData, setPaymentModeData] = useState([]);
+    const [paymentActiveIndex, setPaymentActiveIndex] = useState(0);
+
+    const processPaymentData = useCallback((bills) => {
+        const counts = {};
+        bills.forEach(bill => {
+            const mode = bill.modeOfPayment || 'Unknown';
+            counts[mode] = (counts[mode] || 0) + 1;
+        });
+
+        const formatted = Object.keys(counts).map(key => ({
+            name: key,
+            value: counts[key]
+        }));
+        setPaymentModeData(formatted);
+    }, []);
+
+    const onPaymentPieEnter = (_, index) => setPaymentActiveIndex(index);
+
+    const totalTransactions = paymentModeData.reduce((acc, curr) => acc + curr.value, 0);
+    const topPaymentMode = paymentModeData.length > 0
+        ? [...paymentModeData].sort((a, b) => b.value - a.value)[0]
+        : { name: 'N/A', value: 0 };
+
     // Product Derived Metrics
     const totalQtySold = productSalesData.reduce((acc, curr) => acc + curr.quantity, 0);
     const avgQtyPerPeriod = totalQtySold / (productSalesData.length || 1);
@@ -225,12 +325,20 @@ const Analytics = () => {
 
                     const top = getTopSellingProduct(fetchedBills);
                     if (top) setSelectedProduct(top);
+
+                    processPaymentData(fetchedBills);
+
+                    setTopProductsStartDate(min);
+                    setTopProductsEndDate(max);
                 }
                 setLastUpdatedRevenue(formatTimestamp());
 
-                // Fetch Products
                 const productSnapshot = await getDocs(collection(db, "products"));
-                const fetchedProducts = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const fetchedProducts = productSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setProducts(fetchedProducts);
                 processCategoryData(fetchedProducts);
                 setLastUpdatedInventory(formatTimestamp());
 
@@ -241,7 +349,7 @@ const Analytics = () => {
             }
         };
         fetchData();
-    }, [processChartData, processCategoryData, getTopSellingProduct]);
+    }, [processChartData, processCategoryData, getTopSellingProduct, processPaymentData]);
 
     useEffect(() => {
         if (selectedProduct) {
@@ -282,6 +390,54 @@ const Analytics = () => {
                 </Row>
             </div>
         );
+    };
+
+    const CustomRevenueTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white p-3 shadow-lg rounded-4 border-0" style={{ minWidth: '180px' }}>
+                    <p className="text-uppercase fw-bold text-muted mb-2" style={{ fontSize: '10px', letterSpacing: '0.05em' }}>
+                        {label}
+                    </p>
+                    <div className="d-flex align-items-center justify-content-between">
+                        <div className="d-flex align-items-center justify-content-center gap-2">
+                            <div className="rounded-circle" style={{ width: '8px', height: '8px', backgroundColor: '#0d6efd' }}></div>
+                            <span className="fw-medium text-dark small">Revenue</span>
+                        </div>
+                        <span className="fw-bold text-primary fs-5">
+                            ₹{payload[0].value.toLocaleString('en-IN')}
+                        </span>
+                    </div>
+                    <div className="mt-2 pt-2 border-top border-light">
+                        <small className="text-muted" style={{ fontSize: '9px' }}>Net Earnings</small>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    const CustomProductTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white p-3 shadow-lg rounded-4 border-0" style={{ minWidth: '150px' }}>
+                    <p className="text-uppercase fw-bold text-muted mb-2" style={{ fontSize: '10px', letterSpacing: '0.05em' }}>
+                        {label}
+                    </p>
+                    <div className="d-flex align-items-center justify-content-between">
+                        <div className="d-flex align-items-center gap-2">
+                            <div className="rounded-circle" style={{ width: '8px', height: '8px', backgroundColor: '#f59f00' }}></div>
+                            <span className="fw-medium text-dark small">Quantity Sold</span>
+                        </div>
+                        <span className="fw-bold text-dark fs-5">{payload[0].value}</span>
+                    </div>
+                    <div className="mt-2 pt-2 border-top border-light">
+                        <small className="text-muted" style={{ fontSize: '9px' }}>Units move</small>
+                    </div>
+                </div>
+            );
+        }
+        return null;
     };
 
     return (
@@ -344,13 +500,16 @@ const Analytics = () => {
                         </div>
                         {loading ? <div className="text-center py-5"><Spinner animation="border" variant="primary" /></div> : (
                             viewMode === 'chart' ? (
-                                <div style={{ width: '100%', height: 350 }}>
-                                    <ResponsiveContainer>
+                                <div style={{ width: '100%', height: 420, minWidth: 0 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={chartData}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#bababa" />
                                             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6c757d' }} axisLine={false} tickLine={false} />
                                             <YAxis tick={{ fontSize: 11, fill: '#6c757d' }} tickFormatter={(v) => `₹${v.toLocaleString()}`} axisLine={false} tickLine={false} />
-                                            <RechartsTooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                            <RechartsTooltip
+                                                content={<CustomRevenueTooltip />}
+                                                cursor={{ stroke: '#0d6efd', strokeWidth: 1, strokeDasharray: '4 4' }}
+                                            />
                                             <Line type="linear" dataKey="sales" stroke="#0d6efd" strokeWidth={3} dot={{ r: 4 }} />
                                         </LineChart>
                                     </ResponsiveContainer>
@@ -404,8 +563,8 @@ const Analytics = () => {
                             <Card className="border-0 shadow-sm rounded-3 p-3 h-100">
                                 <div className="d-flex align-items-center mb-2"><MdPieChart className="text-primary me-2" size={20} /><span className="fw-bold small text-uppercase text-muted">Category Spread</span></div>
                                 {loading ? <div className="text-center py-5"><Spinner animation="border" variant="success" /></div> : (
-                                    <div style={{ width: '100%', height: 420 }}>
-                                        <ResponsiveContainer>
+                                    <div style={{ width: '100%', height: 420, minWidth: 0 }}>
+                                        <ResponsiveContainer width="100%" height="100%">
                                             <PieChart margin={{ right: 80 }}>
                                                 <Pie activeIndex={activeIndex} activeShape={renderActiveShape} data={categoryData} innerRadius={80} outerRadius={130} paddingAngle={8} dataKey="value" nameKey="name" onMouseEnter={onPieEnter}>
                                                     {categoryData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
@@ -431,79 +590,357 @@ const Analytics = () => {
                         <MdTrendingUp className="text-warning" size={24} />
                         <h5 className="mb-0 fw-bold">Product Sales Analytics</h5>
                     </div>
-                    {/* ADDED RESET BUTTON HERE */}
-                    {isProductFilterActive && (
-                        <Button
-                            variant="link"
-                            size="sm"
-                            onClick={resetProductFilters}
-                            className="text-danger text-decoration-none p-0"
-                        >
-                            <MdClear /> Reset View
-                        </Button>
-                    )}
+                    <div className="d-flex align-items-center gap-3">
+                        {isProductFilterActive && (
+                            <Button variant="link" size="sm" onClick={resetProductFilters} className="text-danger text-decoration-none p-0">
+                                <MdClear /> Reset View
+                            </Button>
+                        )}
+                    </div>
                 </Card.Header>
                 <Card.Body className="p-4 bg-light bg-opacity-10">
                     <Row className="g-3 mb-4">
-                        <Col md={3}>
-                            <InventoryStat title="Best Seller" value={bestSellerName || 'N/A'} subtitle="Overall top performer" icon={<MdTrendingUp />} color="success" isNumeric={false} />
-                        </Col>
-                        <Col md={3}>
-                            <InventoryStat
-                                title="Total Units Sold"
-                                value={totalQtySold}
-                                subtitle={`For ${selectedProduct || 'selected item'}`}
-                                icon={<MdFunctions />}
-                                color="warning" />
-                        </Col>
-                        <Col md={3}>
-                            <InventoryStat
-                                title={`Avg Units / ${productTimeFrame}`}
-                                value={avgQtyPerPeriod.toFixed(1)}
-                                subtitle={`Sales velocity for ${selectedProduct || 'selected item'}`}
-                                icon={<MdTrendingUp />}
-                                color="info" />
-                        </Col>
-                        <Col md={3}>
-                            <InventoryStat
-                                title="Peak Demand"
-                                value={peakQty}
-                                subtitle={`Max units in ${productTimeFrame} for ${selectedProduct || 'selected item'}`}
-                                icon={<MdEvent />}
-                                color="danger" />
-                        </Col>
+                        {/* ... stats columns stay the same ... */}
+                        <Col md={3}><InventoryStat title="Best Seller" value={bestSellerName || 'N/A'} subtitle="Overall top performer" icon={<MdTrendingUp />} color="success" isNumeric={false} /></Col>
+                        <Col md={3}><InventoryStat title="Total Units Sold" value={totalQtySold} subtitle={`For ${selectedProduct || 'selected item'}`} icon={<MdFunctions />} color="warning" /></Col>
+                        <Col md={3}><InventoryStat title={`Avg Units / ${productTimeFrame}`} value={avgQtyPerPeriod.toFixed(1)} subtitle={`Sales velocity for ${selectedProduct || 'selected item'}`} icon={<MdTrendingUp />} color="info" /></Col>
+                        <Col md={3}><InventoryStat title="Peak Demand" value={peakQty} subtitle={`Max units in ${productTimeFrame} for ${selectedProduct || 'selected item'}`} icon={<MdEvent />} color="danger" /></Col>
                     </Row>
+
                     <Row className="g-3 mb-4">
-                        <Col md={4}><Form.Group><Form.Label className="small fw-bold text-muted">SELECT PRODUCT</Form.Label>
-                            <Form.Select size="sm" value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
-                                {allProductNames.map((p, i) => (<option key={i} value={p}>{p}</option>))}
-                            </Form.Select></Form.Group></Col>
-                        <Col md={4}><Form.Group><Form.Label className="small fw-bold text-muted">DATE RANGE</Form.Label>
-                            <InputGroup size="sm">
-                                <Form.Control type="date" min={productMinDate} max={productMaxDate} value={productStartDate} onChange={(e) => setProductStartDate(e.target.value)} />
-                                <InputGroup.Text>to</InputGroup.Text>
-                                <Form.Control type="date" min={productMinDate} max={productMaxDate} value={productEndDate} onChange={(e) => setProductEndDate(e.target.value)} />
-                            </InputGroup></Form.Group></Col>
-                        <Col md={3}><Form.Group><Form.Label className="small fw-bold text-muted">GROUP BY</Form.Label>
-                            <Form.Select size="sm" value={productTimeFrame} onChange={(e) => setProductTimeFrame(e.target.value)}>
-                                <option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option>
-                            </Form.Select></Form.Group></Col>
+                        <Col md={4}>
+                            <Form.Group>
+                                <Form.Label className="small fw-bold text-muted">SELECT PRODUCT</Form.Label>
+                                <Form.Select size="sm" value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
+                                    {allProductNames.map((p, i) => (<option key={i} value={p}>{p}</option>))}
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                        <Col md={4}>
+                            <Form.Group>
+                                <Form.Label className="small fw-bold text-muted">DATE RANGE</Form.Label>
+                                <InputGroup size="sm">
+                                    <Form.Control type="date" min={productMinDate} max={productMaxDate} value={productStartDate} onChange={(e) => setProductStartDate(e.target.value)} />
+                                    <InputGroup.Text>to</InputGroup.Text>
+                                    <Form.Control type="date" min={productMinDate} max={productMaxDate} value={productEndDate} onChange={(e) => setProductEndDate(e.target.value)} />
+                                </InputGroup>
+                            </Form.Group>
+                        </Col>
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label className="small fw-bold text-muted">GROUP BY</Form.Label>
+                                <Form.Select size="sm" value={productTimeFrame} onChange={(e) => setProductTimeFrame(e.target.value)}>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="yearly">Yearly</option>
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
                     </Row>
+
                     <Card className="border-0 shadow-sm rounded-3 p-3">
-                        <div className="d-flex align-items-center mb-3"><MdTimeline className="text-warning me-2" size={20} /><span className="fw-bold small text-uppercase text-muted">Quantity Sold Over Time</span></div>
-                        {selectedProduct ? (
-                            <div style={{ width: '100%', height: 350 }}>
-                                <ResponsiveContainer>
-                                    <LineChart data={productSalesData}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <XAxis dataKey="name" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} />
-                                        <RechartsTooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                        <Line type="linear" dataKey="quantity" stroke="#f59f00" strokeWidth={3} dot={{ r: 4 }} />
-                                    </LineChart>
-                                </ResponsiveContainer>
+                        <div className="d-flex align-items-center justify-content-between mb-3">
+                            <div className="d-flex align-items-center">
+                                <MdTimeline className="text-warning me-2" size={20} />
+                                <span className="fw-bold small text-uppercase text-muted">Quantity Sold Over Time</span>
                             </div>
+                            {/* NEW TOGGLE BUTTONS */}
+                            <div className="btn-group shadow-sm" role="group">
+                                <Button
+                                    variant={productViewMode === 'chart' ? 'warning' : 'outline-warning'}
+                                    size="sm"
+                                    onClick={() => setProductViewMode('chart')}
+                                    className="d-flex align-items-center gap-1"
+                                >
+                                    <MdBarChart /> Chart
+                                </Button>
+                                <Button
+                                    variant={productViewMode === 'table' ? 'warning' : 'outline-warning'}
+                                    size="sm"
+                                    onClick={() => setProductViewMode('table')}
+                                    className="d-flex align-items-center gap-1"
+                                >
+                                    <MdTableRows /> Table
+                                </Button>
+                            </div>
+                        </div>
+
+                        {selectedProduct ? (
+                            productViewMode === 'chart' ? (
+                                <div style={{ width: '100%', height: 420, minWidth: 0 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={productSalesData}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                            <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                                            <YAxis tick={{ fontSize: 11 }} />
+                                            <RechartsTooltip
+                                                content={<CustomProductTooltip />}
+                                                cursor={{ stroke: '#f59f00', strokeWidth: 1, strokeDasharray: '4 4' }}
+                                            />
+                                            <Line type="linear" dataKey="quantity" stroke="#f59f00" strokeWidth={3} dot={{ r: 4 }} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            ) : (
+                                <div style={{ height: 350, overflowY: 'auto' }}>
+                                    <Table hover responsive className="align-middle border-light">
+                                        <thead className="bg-light sticky-top">
+                                            <tr className='text-center'>
+                                                <th className="small text-muted border-0">{timeFrameLabels[productTimeFrame]}</th>
+                                                <th className="small text-muted border-0">Quantity Sold</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {productSalesData.map((row, idx) => (
+                                                <tr className='text-center' key={idx}>
+                                                    <td className="fw-medium">{row.name}</td>
+                                                    <td className="fw-bold text-warning">{row.quantity.toLocaleString()} Units</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                            )
                         ) : <div className="text-center py-5 text-muted">Select a product to view analytics</div>}
                     </Card>
+                </Card.Body>
+                <Card.Footer className="bg-white py-2 px-4 border-top">
+                    <small className="text-muted float-end fst-italic">Last Updated: {lastUpdatedRevenue}</small>
+                </Card.Footer>
+            </Card>
+
+            {/* SECTION 4: TOP SELLING PRODUCTS BAR CHART */}
+            <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+                <Card.Header className="bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-2">
+                        <MdBarChart className="text-danger" size={24} />
+                        <h5 className="mb-0 fw-bold">Top Selling Products</h5>
+                    </div>
+                    {/* Reset Button for Top Products */}
+                    {(topProductsStartDate !== absMinDate || topProductsEndDate !== absMaxDate) && (
+                        <Button
+                            variant="link" size="sm" className="text-danger text-decoration-none p-0"
+                            onClick={() => { setTopProductsStartDate(absMinDate); setTopProductsEndDate(absMaxDate); }}
+                        >
+                            <MdClear /> Reset Dates
+                        </Button>
+                    )}
+                </Card.Header>
+
+                <Card.Body className="p-4 bg-light bg-opacity-10">
+                    <Row className="g-3 mb-4">
+                        <Col md={4}>
+                            <InventoryStat
+                                title="Top Performer"
+                                value={allTopProducts[0]?.name || 'N/A'}
+                                subtitle="Highest volume item"
+                                icon={<MdTrendingUp />}
+                                color="danger"
+                                isNumeric={false}
+                            />
+                        </Col>
+                        <Col md={4}>
+                            <InventoryStat
+                                title="Top Seller Volume"
+                                value={allTopProducts[0]?.quantity || 0}
+                                subtitle="Units sold by leader"
+                                icon={<MdFunctions />}
+                                color="primary"
+                            />
+                        </Col>
+                        <Col md={4}>
+                            <InventoryStat
+                                title="Market Depth"
+                                value={allTopProducts.length}
+                                subtitle="Total unique items sold"
+                                icon={<MdLayers />}
+                                color="success"
+                            />
+                        </Col>
+                    </Row>
+
+                    <Row className="g-3 mb-4">
+                        {/* Date Range Filter (From previous step) */}
+                        <Col md={4}>
+                            <Form.Group>
+                                <Form.Label className="small fw-bold text-muted">DATE RANGE</Form.Label>
+                                <InputGroup size="sm">
+                                    <Form.Control type="date" value={topProductsStartDate} onChange={(e) => setTopProductsStartDate(e.target.value)} />
+                                    <InputGroup.Text>to</InputGroup.Text>
+                                    <Form.Control type="date" value={topProductsEndDate} onChange={(e) => setTopProductsEndDate(e.target.value)} />
+                                </InputGroup>
+                            </Form.Group>
+                        </Col>
+
+                        {/* NEW: Category Filter */}
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label className="small fw-bold text-muted">CATEGORY</Form.Label>
+                                <Form.Select
+                                    size="sm"
+                                    value={topProductsCategory}
+                                    onChange={(e) => setTopProductsCategory(e.target.value)}
+                                >
+                                    <option value="All">All Categories</option>
+                                    {categoryData.map((cat, i) => (
+                                        <option key={i} value={cat.name}>{cat.name}</option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                    </Row>
+
+                    <Card className="border-0 shadow-sm rounded-3 p-3">
+                        {/* UPDATED HEADER AREA INSIDE THE CHART CARD */}
+                        <div className="d-flex align-items-center justify-content-between mb-4">
+                            <div className="d-flex align-items-center">
+                                <MdTrendingUp className="text-danger me-2" size={20} />
+                                <span className="fw-bold small text-uppercase text-muted">Best Sellers by Quantity</span>
+                            </div>
+
+                            <div className="d-flex align-items-center gap-3">
+                                <span className="text-muted fw-medium" style={{ fontSize: '0.75rem' }}>
+                                    {topProductsIndex + 1} - {Math.min(topProductsIndex + pageSize, allTopProducts.length)} of {allTopProducts.length}
+                                </span>
+                                <div className="btn-group shadow-sm">
+                                    <Button
+                                        variant="white"
+                                        size="sm"
+                                        className="border border-light-subtle"
+                                        disabled={topProductsIndex === 0}
+                                        onClick={() => setTopProductsIndex(prev => Math.max(0, prev - pageSize))}
+                                    >
+                                        <span style={{ fontSize: '1.1rem', lineHeight: '1' }}>‹</span>
+                                    </Button>
+                                    <Button
+                                        variant="white"
+                                        size="sm"
+                                        className="border border-light-subtle border-start-0"
+                                        disabled={topProductsIndex + pageSize >= allTopProducts.length}
+                                        onClick={() => setTopProductsIndex(prev => prev + pageSize)}
+                                    >
+                                        <span style={{ fontSize: '1.1rem', lineHeight: '1' }}>›</span>
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {loading ? (
+                            <div className="text-center py-5"><Spinner animation="border" variant="danger" /></div>
+                        ) : (
+                            <div style={{ width: '100%', height: 420, minWidth: 0 }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart
+                                        data={visibleTopProducts}
+                                        margin={{ top: 10, right: 30, left: 20, bottom: 60 }}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                                        <XAxis
+                                            dataKey="name"
+                                            interval={0}
+                                            angle={-45}
+                                            textAnchor="end"
+                                            tick={{ fontSize: 11, fontWeight: 500 }}
+                                            height={80}
+                                            axisLine={false}
+                                            tickLine={false}
+                                        />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+                                        <RechartsTooltip
+                                            cursor={{ fill: 'rgba(0, 0, 0, 0.03)' }}
+                                            content={<CustomBarTooltip />}
+                                        />
+                                        <Bar dataKey="quantity" radius={[4, 4, 0, 0]} barSize={40}>
+                                            {visibleTopProducts.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[(topProductsIndex + index) % COLORS.length]} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
+                    </Card>
+                </Card.Body>
+            </Card>
+
+            {/* SECTION 5: PAYMENT MODE DISTRIBUTION */}
+            <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+                <Card.Header className="bg-white border-bottom py-3 px-4">
+                    <div className="d-flex align-items-center gap-2">
+                        <MdReceipt className="text-info" size={24} />
+                        <h5 className="mb-0 fw-bold">Payment Mode Distribution</h5>
+                    </div>
+                </Card.Header>
+                <Card.Body className="p-4 bg-light bg-opacity-10">
+                    <Row className="g-4">
+                        <Col md={4} lg={3}>
+                            <div className="d-flex flex-column gap-3 h-100">
+                                <InventoryStat
+                                    title="Total Transactions"
+                                    value={totalTransactions}
+                                    subtitle="Bills processed"
+                                    icon={<MdFunctions />}
+                                    color="info"
+                                />
+                                <InventoryStat
+                                    title="Primary Mode"
+                                    value={topPaymentMode.name}
+                                    subtitle={`${topPaymentMode.value} usages`}
+                                    icon={<MdTrendingUp />}
+                                    color="success"
+                                    isNumeric={false}
+                                />
+                                <InventoryStat
+                                    title="Active Channels"
+                                    value={paymentModeData.length}
+                                    subtitle="Payment methods"
+                                    icon={<MdLayers />}
+                                    color="primary"
+                                />
+                            </div>
+                        </Col>
+                        <Col md={8} lg={9}>
+                            <Card className="border-0 shadow-sm rounded-3 p-3 h-100">
+                                <div className="d-flex align-items-center mb-2">
+                                    <MdPieChart className="text-info me-2" size={20} />
+                                    <span className="fw-bold small text-uppercase text-muted">Payment Mode Distribution</span>
+                                </div>
+                                {loading ? (
+                                    <div className="text-center py-5"><Spinner animation="border" variant="info" /></div>
+                                ) : (
+                                    <div style={{ width: '100%', height: 420, minWidth: 0 }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart margin={{ right: 80 }}> {/* Added margin for legend space */}
+                                                <Pie
+                                                    activeIndex={paymentActiveIndex}
+                                                    activeShape={renderActiveShape}
+                                                    data={paymentModeData}
+                                                    innerRadius={80}
+                                                    outerRadius={130}
+                                                    paddingAngle={8}
+                                                    dataKey="value"
+                                                    nameKey="name"
+                                                    onMouseEnter={onPaymentPieEnter}
+                                                >
+                                                    {paymentModeData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                {/* Using your custom badge-style legend */}
+                                                <Legend
+                                                    verticalAlign="middle"
+                                                    align="right"
+                                                    layout="vertical"
+                                                    content={renderCustomLegend}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                )}
+                            </Card>
+                        </Col>
+                    </Row>
                 </Card.Body>
                 <Card.Footer className="bg-white py-2 px-4 border-top">
                     <small className="text-muted float-end fst-italic">Last Updated: {lastUpdatedRevenue}</small>

@@ -245,7 +245,7 @@ const PublicBill = () => {
 
                                     <div className="text-center mt-4">
                                         <div className="small opacity-50 mb-1">Issued by {company?.brandName}</div>
-                                        <div className="small opacity-50">
+                                        <div className="small opacity-50 d-flex justify-content-center align-items-center">
                                             <MdCalendarToday size={12} className="me-1" />
                                             {formatDate(bill.billingDate)} • {formatTime(bill.billingTime)}
                                         </div>

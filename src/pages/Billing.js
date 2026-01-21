@@ -449,7 +449,6 @@ We look forward to serving you again soon!`;
                                 <Form.Select value={billingData.paymentMode} onChange={(e) => setBillingData({ ...billingData, paymentMode: e.target.value })}>
                                     <option>UPI</option>
                                     <option>Cash</option>
-                                    <option>Card</option>
                                 </Form.Select>
                             </Form.Group>
                         </Card.Body>
