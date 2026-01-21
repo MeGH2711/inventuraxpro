@@ -201,9 +201,7 @@ We look forward to serving you again soon!`;
                         >
                             <option value="">All Methods</option>
                             <option value="Cash">Cash</option>
-                            <option value="Online">Online</option>
                             <option value="UPI">UPI</option>
-                            <option value="Card">Card</option>
                         </Form.Select>
                     </Form.Group>
                 </Col>

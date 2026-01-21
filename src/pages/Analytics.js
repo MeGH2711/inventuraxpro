@@ -500,7 +500,7 @@ const Analytics = () => {
                         </div>
                         {loading ? <div className="text-center py-5"><Spinner animation="border" variant="primary" /></div> : (
                             viewMode === 'chart' ? (
-                                <div style={{ width: '100%', height: 420, minWidth: 0 }}>
+                                <div style={{ width: '100%', height: '420px' }}>
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={chartData}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#bababa" />
@@ -563,7 +563,7 @@ const Analytics = () => {
                             <Card className="border-0 shadow-sm rounded-3 p-3 h-100">
                                 <div className="d-flex align-items-center mb-2"><MdPieChart className="text-primary me-2" size={20} /><span className="fw-bold small text-uppercase text-muted">Category Spread</span></div>
                                 {loading ? <div className="text-center py-5"><Spinner animation="border" variant="success" /></div> : (
-                                    <div style={{ width: '100%', height: 420, minWidth: 0 }}>
+                                    <div style={{ width: '100%', height: '420px' }}>
                                         <ResponsiveContainer width="100%" height="100%">
                                             <PieChart margin={{ right: 80 }}>
                                                 <Pie activeIndex={activeIndex} activeShape={renderActiveShape} data={categoryData} innerRadius={80} outerRadius={130} paddingAngle={8} dataKey="value" nameKey="name" onMouseEnter={onPieEnter}>
@@ -668,7 +668,7 @@ const Analytics = () => {
 
                         {selectedProduct ? (
                             productViewMode === 'chart' ? (
-                                <div style={{ width: '100%', height: 420, minWidth: 0 }}>
+                                <div style={{ width: '100%', height: '420px' }}>
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={productSalesData}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -829,7 +829,7 @@ const Analytics = () => {
                         {loading ? (
                             <div className="text-center py-5"><Spinner animation="border" variant="danger" /></div>
                         ) : (
-                            <div style={{ width: '100%', height: 420, minWidth: 0 }}>
+                            <div style={{ width: '100%', height: '420px' }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart
                                         data={visibleTopProducts}
@@ -909,9 +909,9 @@ const Analytics = () => {
                                 {loading ? (
                                     <div className="text-center py-5"><Spinner animation="border" variant="info" /></div>
                                 ) : (
-                                    <div style={{ width: '100%', height: 420, minWidth: 0 }}>
+                                    <div style={{ width: '100%', height: '420px' }}>
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart margin={{ right: 80 }}> {/* Added margin for legend space */}
+                                            <PieChart margin={{ right: 80 }}>
                                                 <Pie
                                                     activeIndex={paymentActiveIndex}
                                                     activeShape={renderActiveShape}
