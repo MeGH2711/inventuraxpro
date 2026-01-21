@@ -100,6 +100,7 @@ const Analytics = () => {
     const [categoryData, setCategoryData] = useState([]);
     const [activeIndex, setActiveIndex] = useState(0);
     const [lastUpdatedInventory, setLastUpdatedInventory] = useState('');
+    const [categoryViewMode, setCategoryViewMode] = useState('chart');
 
     const processCategoryData = useCallback((products) => {
         const counts = {};
@@ -188,6 +189,8 @@ const Analytics = () => {
     const [topProductsStartDate, setTopProductsStartDate] = useState('');
     const [topProductsEndDate, setTopProductsEndDate] = useState('');
 
+    const [topProductsViewMode, setTopProductsViewMode] = useState('chart');
+
     const [topProductsCategory, setTopProductsCategory] = useState('All');
 
     const allTopProducts = useMemo(() => {
@@ -256,6 +259,7 @@ const Analytics = () => {
 
     const [paymentModeData, setPaymentModeData] = useState([]);
     const [paymentActiveIndex, setPaymentActiveIndex] = useState(0);
+    const [paymentViewMode, setPaymentViewMode] = useState('chart');
 
     const processPaymentData = useCallback((bills) => {
         const counts = {};
@@ -561,18 +565,102 @@ const Analytics = () => {
                         </Col>
                         <Col md={8} lg={9}>
                             <Card className="border-0 shadow-sm rounded-3 p-3 h-100">
-                                <div className="d-flex align-items-center mb-2"><MdPieChart className="text-primary me-2" size={20} /><span className="fw-bold small text-uppercase text-muted">Category Spread</span></div>
-                                {loading ? <div className="text-center py-5"><Spinner animation="border" variant="success" /></div> : (
-                                    <div style={{ width: '100%', height: '420px' }}>
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart margin={{ right: 80 }}>
-                                                <Pie activeIndex={activeIndex} activeShape={renderActiveShape} data={categoryData} innerRadius={80} outerRadius={130} paddingAngle={8} dataKey="value" nameKey="name" onMouseEnter={onPieEnter}>
-                                                    {categoryData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                                                </Pie>
-                                                <Legend verticalAlign="middle" align="right" layout="vertical" content={renderCustomLegend} />
-                                            </PieChart>
-                                        </ResponsiveContainer>
+                                <div className="d-flex align-items-center justify-content-between mb-2">
+                                    <div className="d-flex align-items-center">
+                                        <MdPieChart className="text-primary me-2" size={20} />
+                                        <span className="fw-bold small text-uppercase text-muted">Category Spread</span>
                                     </div>
+                                    {/* Toggle Buttons */}
+                                    <div className="btn-group shadow-sm" role="group">
+                                        <Button
+                                            variant={categoryViewMode === 'chart' ? 'success' : 'outline-success'}
+                                            size="sm"
+                                            onClick={() => setCategoryViewMode('chart')}
+                                            className="d-flex align-items-center gap-1"
+                                        >
+                                            <MdPieChart /> Chart
+                                        </Button>
+                                        <Button
+                                            variant={categoryViewMode === 'table' ? 'success' : 'outline-success'}
+                                            size="sm"
+                                            onClick={() => setCategoryViewMode('table')}
+                                            className="d-flex align-items-center gap-1"
+                                        >
+                                            <MdTableRows /> Table
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {loading ? (
+                                    <div className="text-center py-5"><Spinner animation="border" variant="success" /></div>
+                                ) : (
+                                    categoryViewMode === 'chart' ? (
+                                        /* --- Existing Pie Chart Code --- */
+                                        <div style={{ width: '100%', height: '420px' }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart margin={{ right: 80 }}>
+                                                    <Pie
+                                                        activeIndex={activeIndex}
+                                                        activeShape={renderActiveShape}
+                                                        data={categoryData}
+                                                        innerRadius={80}
+                                                        outerRadius={130}
+                                                        paddingAngle={8}
+                                                        dataKey="value"
+                                                        nameKey="name"
+                                                        onMouseEnter={onPieEnter}
+                                                    >
+                                                        {categoryData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Legend verticalAlign="middle" align="right" layout="vertical" content={renderCustomLegend} />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    ) : (
+                                        /* --- New Table View --- */
+                                        <div style={{ height: 420, overflowY: 'auto' }}>
+                                            <Table hover responsive className="align-middle border-light">
+                                                <thead className="bg-light sticky-top" style={{ zIndex: 1 }}>
+                                                    <tr className="text-center">
+                                                        <th className="small text-muted border-0">Category Name</th>
+                                                        <th className="small text-muted border-0">Product Count</th>
+                                                        <th className="small text-muted border-0">Share (%)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {categoryData.map((row, idx) => {
+                                                        const percentage = ((row.value / totalProducts) * 100).toFixed(1);
+                                                        return (
+                                                            <tr className="text-center" key={idx}>
+                                                                <td className="fw-medium text-start ps-4">
+                                                                    <span
+                                                                        className="d-inline-block rounded-circle me-2"
+                                                                        style={{ width: '10px', height: '10px', backgroundColor: COLORS[idx % COLORS.length] }}
+                                                                    ></span>
+                                                                    {row.name}
+                                                                </td>
+                                                                <td className="fw-bold">{row.value} Items</td>
+                                                                <td>
+                                                                    <div className="d-flex align-items-center justify-content-center gap-2">
+                                                                        <div className="progress w-50" style={{ height: '6px' }}>
+                                                                            <div
+                                                                                className="progress-bar"
+                                                                                role="progressbar"
+                                                                                style={{ width: `${percentage}%`, backgroundColor: COLORS[idx % COLORS.length] }}
+                                                                            ></div>
+                                                                        </div>
+                                                                        <span className="small text-muted">{percentage}%</span>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </Table>
+                                        </div>
+                                    )
                                 )}
                             </Card>
                         </Col>
@@ -792,73 +880,107 @@ const Analytics = () => {
                     </Row>
 
                     <Card className="border-0 shadow-sm rounded-3 p-3">
-                        {/* UPDATED HEADER AREA INSIDE THE CHART CARD */}
-                        <div className="d-flex align-items-center justify-content-between mb-4">
+                        {/* --- HEADER AREA: Always Visible --- */}
+                        <div className="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-3">
                             <div className="d-flex align-items-center">
                                 <MdTrendingUp className="text-danger me-2" size={20} />
                                 <span className="fw-bold small text-uppercase text-muted">Best Sellers by Quantity</span>
                             </div>
 
-                            <div className="d-flex align-items-center gap-3">
-                                <span className="text-muted fw-medium" style={{ fontSize: '0.75rem' }}>
-                                    {topProductsIndex + 1} - {Math.min(topProductsIndex + pageSize, allTopProducts.length)} of {allTopProducts.length}
-                                </span>
-                                <div className="btn-group shadow-sm">
+                            <div className="d-flex flex-wrap align-items-center gap-3">
+                                {/* 1. View Toggle Buttons */}
+                                <div className="btn-group shadow-sm" role="group">
                                     <Button
-                                        variant="white"
+                                        variant={topProductsViewMode === 'chart' ? 'danger' : 'outline-danger'}
                                         size="sm"
-                                        className="border border-light-subtle"
-                                        disabled={topProductsIndex === 0}
-                                        onClick={() => setTopProductsIndex(prev => Math.max(0, prev - pageSize))}
+                                        onClick={() => setTopProductsViewMode('chart')}
                                     >
-                                        <span style={{ fontSize: '1.1rem', lineHeight: '1' }}>‹</span>
+                                        <MdBarChart /> Chart
                                     </Button>
                                     <Button
-                                        variant="white"
+                                        variant={topProductsViewMode === 'table' ? 'danger' : 'outline-danger'}
                                         size="sm"
-                                        className="border border-light-subtle border-start-0"
-                                        disabled={topProductsIndex + pageSize >= allTopProducts.length}
-                                        onClick={() => setTopProductsIndex(prev => prev + pageSize)}
+                                        onClick={() => setTopProductsViewMode('table')}
                                     >
-                                        <span style={{ fontSize: '1.1rem', lineHeight: '1' }}>›</span>
+                                        <MdTableRows /> Table
                                     </Button>
+                                </div>
+
+                                {/* 2. Pagination Controls (Moved here to stay visible) */}
+                                <div className="d-flex align-items-center gap-2 bg-light p-1 rounded-2 border">
+                                    <span className="text-muted fw-medium px-2" style={{ fontSize: '0.75rem' }}>
+                                        {topProductsIndex + 1}-{Math.min(topProductsIndex + pageSize, allTopProducts.length)} of {allTopProducts.length}
+                                    </span>
+                                    <div className="btn-group">
+                                        <Button
+                                            variant="white"
+                                            size="sm"
+                                            className="border-0"
+                                            disabled={topProductsIndex === 0}
+                                            onClick={() => setTopProductsIndex(prev => Math.max(0, prev - pageSize))}
+                                        >
+                                            ‹
+                                        </Button>
+                                        <Button
+                                            variant="white"
+                                            size="sm"
+                                            className="border-0 border-start"
+                                            disabled={topProductsIndex + pageSize >= allTopProducts.length}
+                                            onClick={() => setTopProductsIndex(prev => prev + pageSize)}
+                                        >
+                                            ›
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
+                        {/* --- CONTENT AREA: Switches based on state --- */}
                         {loading ? (
                             <div className="text-center py-5"><Spinner animation="border" variant="danger" /></div>
                         ) : (
-                            <div style={{ width: '100%', height: '420px' }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart
-                                        data={visibleTopProducts}
-                                        margin={{ top: 10, right: 30, left: 20, bottom: 60 }}
-                                    >
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                                        <XAxis
-                                            dataKey="name"
-                                            interval={0}
-                                            angle={-45}
-                                            textAnchor="end"
-                                            tick={{ fontSize: 11, fontWeight: 500 }}
-                                            height={80}
-                                            axisLine={false}
-                                            tickLine={false}
-                                        />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
-                                        <RechartsTooltip
-                                            cursor={{ fill: 'rgba(0, 0, 0, 0.03)' }}
-                                            content={<CustomBarTooltip />}
-                                        />
-                                        <Bar dataKey="quantity" radius={[4, 4, 0, 0]} barSize={40}>
-                                            {visibleTopProducts.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[(topProductsIndex + index) % COLORS.length]} />
+                            topProductsViewMode === 'chart' ? (
+                                <div style={{ width: '100%', height: '420px' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={visibleTopProducts} margin={{ top: 10, right: 30, left: 20, bottom: 60 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                                            <XAxis dataKey="name" interval={0} angle={-45} textAnchor="end" tick={{ fontSize: 11 }} height={80} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+                                            <RechartsTooltip cursor={{ fill: 'rgba(0, 0, 0, 0.03)' }} content={<CustomBarTooltip />} />
+                                            <Bar dataKey="quantity" radius={[4, 4, 0, 0]} barSize={40}>
+                                                {visibleTopProducts.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[(topProductsIndex + index) % COLORS.length]} />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            ) : (
+                                <div style={{ height: 420, overflowY: 'auto' }}>
+                                    <Table hover responsive className="align-middle border-light">
+                                        <thead className="bg-light sticky-top">
+                                            <tr className="text-center">
+                                                <th className="small text-muted border-0">Rank</th>
+                                                <th className="small text-muted border-0 text-start ps-4">Product Name</th>
+                                                <th className="small text-muted border-0">Units Sold</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {visibleTopProducts.map((row, idx) => (
+                                                <tr className="text-center" key={idx}>
+                                                    <td>
+                                                        <span className={`badge ${idx + topProductsIndex < 3 ? 'bg-danger' : 'bg-secondary'} rounded-circle`} style={{ width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            {idx + topProductsIndex + 1}
+                                                        </span>
+                                                    </td>
+                                                    <td className="fw-medium text-start ps-4">{row.name}</td>
+                                                    <td className="fw-bold text-danger">{row.quantity.toLocaleString()} Units</td>
+                                                </tr>
                                             ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
+                                        </tbody>
+                                    </Table>
+                                </div>
+                            )
                         )}
                     </Card>
                 </Card.Body>
@@ -902,41 +1024,108 @@ const Analytics = () => {
                         </Col>
                         <Col md={8} lg={9}>
                             <Card className="border-0 shadow-sm rounded-3 p-3 h-100">
-                                <div className="d-flex align-items-center mb-2">
-                                    <MdPieChart className="text-info me-2" size={20} />
-                                    <span className="fw-bold small text-uppercase text-muted">Payment Mode Distribution</span>
+                                <div className="d-flex align-items-center justify-content-between mb-2">
+                                    <div className="d-flex align-items-center">
+                                        <MdPieChart className="text-info me-2" size={20} />
+                                        <span className="fw-bold small text-uppercase text-muted">Payment Mode Distribution</span>
+                                    </div>
+
+                                    {/* Toggle Buttons */}
+                                    <div className="btn-group shadow-sm" role="group">
+                                        <Button
+                                            variant={paymentViewMode === 'chart' ? 'info' : 'outline-info'}
+                                            size="sm"
+                                            onClick={() => setPaymentViewMode('chart')}
+                                            className="d-flex align-items-center gap-1"
+                                        >
+                                            <MdPieChart /> Chart
+                                        </Button>
+                                        <Button
+                                            variant={paymentViewMode === 'table' ? 'info' : 'outline-info'}
+                                            size="sm"
+                                            onClick={() => setPaymentViewMode('table')}
+                                            className="d-flex align-items-center gap-1"
+                                        >
+                                            <MdTableRows /> Table
+                                        </Button>
+                                    </div>
                                 </div>
+
                                 {loading ? (
                                     <div className="text-center py-5"><Spinner animation="border" variant="info" /></div>
                                 ) : (
-                                    <div style={{ width: '100%', height: '420px' }}>
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart margin={{ right: 80 }}>
-                                                <Pie
-                                                    activeIndex={paymentActiveIndex}
-                                                    activeShape={renderActiveShape}
-                                                    data={paymentModeData}
-                                                    innerRadius={80}
-                                                    outerRadius={130}
-                                                    paddingAngle={8}
-                                                    dataKey="value"
-                                                    nameKey="name"
-                                                    onMouseEnter={onPaymentPieEnter}
-                                                >
-                                                    {paymentModeData.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                    ))}
-                                                </Pie>
-                                                {/* Using your custom badge-style legend */}
-                                                <Legend
-                                                    verticalAlign="middle"
-                                                    align="right"
-                                                    layout="vertical"
-                                                    content={renderCustomLegend}
-                                                />
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                    </div>
+                                    paymentViewMode === 'chart' ? (
+                                        /* --- Existing Pie Chart Code --- */
+                                        <div style={{ width: '100%', height: '420px' }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart margin={{ right: 80 }}>
+                                                    <Pie
+                                                        activeIndex={paymentActiveIndex}
+                                                        activeShape={renderActiveShape}
+                                                        data={paymentModeData}
+                                                        innerRadius={80}
+                                                        outerRadius={130}
+                                                        paddingAngle={8}
+                                                        dataKey="value"
+                                                        nameKey="name"
+                                                        onMouseEnter={onPaymentPieEnter}
+                                                    >
+                                                        {paymentModeData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Legend
+                                                        verticalAlign="middle"
+                                                        align="right"
+                                                        layout="vertical"
+                                                        content={renderCustomLegend}
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    ) : (
+                                        /* --- New Table View --- */
+                                        <div style={{ height: 420, overflowY: 'auto' }} className="mt-3">
+                                            <Table hover responsive className="align-middle border-light">
+                                                <thead className="bg-light sticky-top">
+                                                    <tr className="text-center">
+                                                        <th className="small text-muted border-0 text-start ps-4">Method</th>
+                                                        <th className="small text-muted border-0">Transactions</th>
+                                                        <th className="small text-muted border-0">Usage %</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {paymentModeData.map((row, idx) => {
+                                                        const percentage = ((row.value / totalTransactions) * 100).toFixed(1);
+                                                        return (
+                                                            <tr className="text-center" key={idx}>
+                                                                <td className="fw-medium text-start ps-4">
+                                                                    <span
+                                                                        className="d-inline-block rounded-circle me-2"
+                                                                        style={{ width: '10px', height: '10px', backgroundColor: COLORS[idx % COLORS.length] }}
+                                                                    ></span>
+                                                                    {row.name}
+                                                                </td>
+                                                                <td className="fw-bold">{row.value} Bills</td>
+                                                                <td>
+                                                                    <div className="d-flex align-items-center justify-content-center gap-2">
+                                                                        <div className="progress w-50" style={{ height: '6px' }}>
+                                                                            <div
+                                                                                className="progress-bar"
+                                                                                role="progressbar"
+                                                                                style={{ width: `${percentage}%`, backgroundColor: COLORS[idx % COLORS.length] }}
+                                                                            ></div>
+                                                                        </div>
+                                                                        <span className="small text-muted">{percentage}%</span>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </Table>
+                                        </div>
+                                    )
                                 )}
                             </Card>
                         </Col>
