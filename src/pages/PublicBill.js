@@ -132,7 +132,7 @@ const PublicBill = () => {
                         {/* Order Detail Table Card */}
                         <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                             <Card.Header className="bg-white py-3 border-light">
-                                <h6 className="mb-0 fw-bold text-muted small text-uppercase tracking-wider">Line Items</h6>
+                                <h6 className="mb-0 fw-bold text-muted small text-uppercase tracking-wider">Items</h6>
                             </Card.Header>
 
                             {/* Desktop View Table */}
@@ -163,21 +163,46 @@ const PublicBill = () => {
                                 </Table>
                             </div>
 
-                            {/* Mobile View List (Stacks nicely on phones) */}
-                            <div className="d-md-none p-3">
-                                {bill.products.map((p, i) => (
-                                    <div key={i} className={`py-3 ${i !== bill.products.length - 1 ? 'border-bottom border-light' : ''}`}>
-                                        <div className="fw-bold text-dark mb-1">{p.name}</div>
-                                        <div className="d-flex justify-content-between small text-muted mb-2">
-                                            <span>{p.quantity} units × ₹{p.unitPrice.toFixed(2)}</span>
-                                            <span className="text-decoration-line-through">₹{(p.quantity * p.unitPrice).toFixed(2)}</span>
+                            {/* Mobile View List (Redesigned) */}
+                            <div className="d-md-none">
+                                {bill.products.map((p, i) => {
+                                    // Calculate if there is a discount on this specific item
+                                    const originalPrice = p.quantity * p.unitPrice;
+                                    const hasDiscount = p.discount > 0;
+
+                                    return (
+                                        <div key={i} className={`p-3 ${i !== bill.products.length - 1 ? 'border-bottom border-light' : ''}`}>
+                                            <div className="d-flex justify-content-between align-items-start mb-2">
+                                                <div style={{ flex: 1 }}>
+                                                    <div className="fw-bold text-dark fs-6 mb-0">{p.name}</div>
+                                                    <div className="text-muted small">
+                                                        {p.quantity} {p.quantity > 1 ? 'units' : 'unit'} × ₹{p.unitPrice.toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="text-end">
+                                                    <div className="fw-bold text-dark" style={{ fontSize: '1.1rem' }}>
+                                                        ₹{p.discountedTotal.toFixed(2)}
+                                                    </div>
+                                                    {/* Only show original price if a discount exists */}
+                                                    {hasDiscount && (
+                                                        <div className="text-muted small text-decoration-line-through">
+                                                            ₹{originalPrice.toFixed(2)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Conditional Discount Badge */}
+                                            {hasDiscount && (
+                                                <div className="d-flex align-items-center mt-1">
+                                                    <Badge bg="soft-success" className="text-success border border-success border-opacity-25" style={{ backgroundColor: '#e6f4ea', fontSize: '0.7rem' }}>
+                                                        SAVED {p.discount}% (₹{(originalPrice - p.discountedTotal).toFixed(2)})
+                                                    </Badge>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="d-flex justify-content-between align-items-center">
-                                            <Badge bg="light" text="info" className="border">Discount: {p.discount}%</Badge>
-                                            <span className="fw-bold text-dark">₹{p.discountedTotal.toFixed(2)}</span>
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </Card>
 

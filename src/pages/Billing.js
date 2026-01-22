@@ -171,23 +171,35 @@ const Billing = () => {
 
     // Customer Search Logic
     const handleCustomerSearch = (field, value) => {
-        setBillingData({ ...billingData, [field]: value });
-        if (value.length > 1) {
-            const filtered = allCustomers.filter(c =>
-                c.name?.toLowerCase().includes(value.toLowerCase()) ||
-                c.phone?.includes(value)
-            );
+        // New restriction logic for phone number
+        if (field === 'contactNumber') {
+            // Remove any non-numeric characters
+            const cleanedValue = value.replace(/\D/g, '');
+            // Limit to 10 characters
+            if (cleanedValue.length > 10) return;
 
-            // Remove duplicates by Phone Number before setting suggestions
-            const uniqueFiltered = Array.from(new Map(filtered.map(item => [item.phone, item])).values());
+            setBillingData({ ...billingData, [field]: cleanedValue });
 
-            setCustomerSuggestions(uniqueFiltered);
-            setShowCustomerSuggestions({
-                name: field === 'customerName',
-                phone: field === 'contactNumber'
-            });
+            // Trigger suggestions only if we have a few digits
+            if (cleanedValue.length > 1) {
+                const filtered = allCustomers.filter(c => c.phone?.includes(cleanedValue));
+                const uniqueFiltered = Array.from(new Map(filtered.map(item => [item.phone, item])).values());
+                setCustomerSuggestions(uniqueFiltered);
+                setShowCustomerSuggestions({ name: false, phone: true });
+            } else {
+                setShowCustomerSuggestions({ name: false, phone: false });
+            }
         } else {
-            setShowCustomerSuggestions({ name: false, phone: false });
+            // Original logic for name field
+            setBillingData({ ...billingData, [field]: value });
+            if (value.length > 1) {
+                const filtered = allCustomers.filter(c => c.name?.toLowerCase().includes(value.toLowerCase()));
+                const uniqueFiltered = Array.from(new Map(filtered.map(item => [item.phone, item])).values());
+                setCustomerSuggestions(uniqueFiltered);
+                setShowCustomerSuggestions({ name: true, phone: false });
+            } else {
+                setShowCustomerSuggestions({ name: false, phone: false });
+            }
         }
     };
 
@@ -409,6 +421,7 @@ We look forward to serving you again soon!`;
                                     type="tel"
                                     autoComplete="off"
                                     value={billingData.contactNumber}
+                                    maxLength={10} // Prevents typing more than 10 digits
                                     onChange={(e) => handleCustomerSearch('contactNumber', e.target.value)}
                                 />
                                 {showCustomerSuggestions.phone && customerSuggestions.length > 0 && (
