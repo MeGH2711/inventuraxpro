@@ -8,7 +8,6 @@ import {
     MdReceipt,
     MdCalendarToday,
     MdCheckCircle,
-    MdInfoOutline,
 } from 'react-icons/md';
 import {
     FaInstagram,
