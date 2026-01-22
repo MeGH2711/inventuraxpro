@@ -16,8 +16,8 @@
   --danger-color: #ff0000;
   --cardBg: #ffffff;
   --textColor: #212529;
-  --bs-secondary-color: #6c757d;
   /*For Muted Text*/
+  --bs-secondary-color: #6c757d;
   --sidebarBg: rgb(10, 47, 79);
   --sidebarActiveBg: #ffffff;
   --sidebarActiveText: rgb(10, 47, 79);
@@ -32,8 +32,8 @@
   --mainThemeColor: rgb(15, 68, 114);
   --cardBg: #151d24;
   --textColor: #f8f9fa;
-  --bs-secondary-color: #a0aab4;
   /*For Muted Text*/
+  --bs-secondary-color: #a0aab4;
   --sidebarBg: #0f171e;
   --sidebarActiveBg: rgba(255, 255, 255, 0.15);
   --sidebarActiveText: #ffffff;

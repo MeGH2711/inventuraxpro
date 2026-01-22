@@ -120,11 +120,13 @@ const Products = () => {
                 </div>
                 <div className="d-flex gap-2 align-items-center w-50 justify-content-end">
                     <div className="input-group input-group-sm w-50">
-                        <span className="input-group-text bg-transparent border-end-0"><MdSearch /></span>
+                        <span className={`input-group-text bg-transparent border-end-0 ${isDarkMode ? 'text-light' : ''}`}>
+                            <MdSearch />
+                        </span>
                         <Form.Control
                             type="text"
                             placeholder="Search..."
-                            className="border-start-0 shadow-none"
+                            className={`border-start-0 shadow-none ${isDarkMode ? 'bg-dark text-light' : ''}`}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>

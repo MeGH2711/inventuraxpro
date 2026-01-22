@@ -18,6 +18,18 @@ export const ThemeProvider = ({ children }) => {
         }
     }, [isDarkMode]);
 
+    useEffect(() => {
+        const root = window.document.documentElement;
+
+        if (isDarkMode) {
+            root.setAttribute('data-bs-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            root.setAttribute('data-bs-theme', 'light');
+            localStorage.setItem('theme', 'light');
+        }
+    }, [isDarkMode]);
+
     const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
     return (

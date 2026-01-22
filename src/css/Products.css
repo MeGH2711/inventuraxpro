@@ -24,13 +24,13 @@
 .product-name {
     font-family: 'Montserrat', sans-serif;
     font-weight: 700;
-    color: var(--mainThemeColor);
+    color: var(--textColor);
     font-size: 1.15rem;
     line-height: 1.3;
 }
 
-.product-name {
-    color: var(--textColor);
+[data-theme='dark'] .product-name {
+    color: #ffffff;
 }
 
 .category-tag {
@@ -43,12 +43,21 @@
     margin-bottom: 8px;
 }
 
+[data-theme='dark'] .category-tag {
+    color: #63b3ed;
+}
+
 /* Pricing Section */
 .price-section {
     background: rgba(19, 85, 141, 0.15);
     padding: 12px 20px;
     border-radius: 16px;
     margin: 15px 0;
+}
+
+[data-theme='dark'] .price-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .price-label {
@@ -90,12 +99,24 @@
     border: 1px solid #fed7d7 !important;
 }
 
+[data-theme='dark'] .btn-delete-action {
+    background-color: rgba(229, 62, 62, 0.1) !important;
+    color: #fc8181 !important;
+    border: 1px solid rgba(229, 62, 62, 0.2) !important;
+}
+
 .product-table thead th {
     font-family: 'Montserrat', sans-serif;
     font-size: 0.65rem !important;
     letter-spacing: 1px;
     padding: 18px 10px !important;
     background-color: #f8f9fa !important;
+}
+
+[data-theme='dark'] .product-table thead th {
+    background-color: #0f171e !important;
+    color: #a0aab4 !important;
+    border-bottom: 1px solid var(--tableBorder) !important;
 }
 
 .badge-category-table {
@@ -117,6 +138,14 @@
     font-weight: 600;
 }
 
+[data-theme='dark'] .input-group-text,
+[data-theme='dark'] .form-control,
+[data-theme='dark'] .form-select {
+    background-color: #1a2632 !important;
+    border-color: #2d3741 !important;
+    color: #f8f9fa !important;
+}
+
 .drawer-modern {
     background-color: var(--cardBg) !important;
     color: var(--textColor) !important;
@@ -126,6 +155,10 @@
 .drawer-modern .offcanvas-header {
     border-bottom: 1px solid #f8f9fa;
     padding: 30px;
+}
+
+[data-theme='dark'] .drawer-modern .form-label {
+    color: #cbd5e0 !important;
 }
 
 .drawer-modern .form-control,
@@ -138,4 +171,24 @@
 [data-theme='dark'] .product-table {
     --bs-table-bg: transparent;
     --bs-table-color: var(--textColor);
+}
+
+[data-theme='dark'] .product-table tbody td:first-child,
+[data-theme='dark'] .product-name {
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] .product-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    transition: background-color 0.2s ease;
+}
+
+[data-theme='dark'] .product-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+[data-theme='dark'] .product-table td.fw-bold {
+    color: #63b3ed !important;
+    /* Lighter blue for better visibility */
 }
