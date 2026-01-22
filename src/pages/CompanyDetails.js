@@ -22,7 +22,8 @@ const CompanyDetails = () => {
         youtubeName: '',
         youtubeLink: '',
         instagramName: '',
-        instagramLink: ''
+        instagramLink: '',
+        website: ''
     });
 
     const [originalData, setOriginalData] = useState({});
@@ -137,7 +138,18 @@ const CompanyDetails = () => {
                                 <Form.Label className="small fw-bold">BRAND NAME</Form.Label>
                                 <Form.Control name="brandName" value={formData.brandName} onChange={handleChange} />
                             </Col>
-                            <Col md={12}>
+                            {/* New Website Field */}
+                            <Col md={6}>
+                                <Form.Label className="small fw-bold">COMPANY WEBSITE</Form.Label>
+                                <Form.Control
+                                    name="website"
+                                    type="url"
+                                    placeholder="https://example.com"
+                                    value={formData.website}
+                                    onChange={handleChange}
+                                />
+                            </Col>
+                            <Col md={6}>
                                 <Form.Label className="small fw-bold">FSSAI NUMBER</Form.Label>
                                 <Form.Control name="fssai" value={formData.fssai} onChange={handleChange} />
                             </Col>

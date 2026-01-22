@@ -8,8 +8,14 @@ import {
     MdReceipt,
     MdCalendarToday,
     MdCheckCircle,
-    MdInfoOutline
+    MdInfoOutline,
 } from 'react-icons/md';
+import {
+    FaInstagram,
+    FaYoutube,
+    FaGlobe,
+    FaPhoneAlt
+} from 'react-icons/fa';
 import { generateInvoice } from '../utils/generateInvoice';
 
 const PublicBill = () => {
@@ -279,11 +285,59 @@ const PublicBill = () => {
                             </Card>
 
                             {/* Merchant Support Card */}
-                            <Card className="border-0 shadow-sm rounded-4 mt-3 bg-white text-center p-3">
-                                <div className="text-muted small">
-                                    <MdInfoOutline className="me-1" /> Need help with this order? <br />
-                                    <strong>Contact: {company?.phone}</strong>
-                                </div>
+                            {/* Redesigned Merchant & Social Card */}
+                            <Card className="border-0 shadow-sm rounded-4 mt-3 bg-white overflow-hidden">
+                                <Card.Header className="bg-light border-0 py-3 text-center">
+                                    <h6 className="mb-0 fw-bold text-muted small text-uppercase">Connect with Us</h6>
+                                </Card.Header>
+                                <Card.Body className="p-4">
+                                    {/* Support Section */}
+                                    <div className="text-center mb-4">
+                                        <div className="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-2" style={{ width: '40px', height: '40px' }}>
+                                            <FaPhoneAlt size={18} />
+                                        </div>
+                                        <div className="small text-muted">Customer Support</div>
+                                        <h6 className="fw-bold">{company?.phone}</h6>
+                                    </div>
+
+                                    {/* Clickable Social Grid */}
+                                    <div className="d-flex justify-content-center gap-3 pt-3 border-top">
+                                        {company?.website && (
+                                            <a href={company.website} target="_blank" rel="noopener noreferrer"
+                                                className="btn rounded-circle d-flex align-items-center justify-content-center"
+                                                style={{ width: '45px', height: '45px', borderColor: '#1c1c1c', color: '#1c1c1c'  }} title="Website">
+                                                <FaGlobe size={20} />
+                                            </a>
+                                        )}
+
+                                        {company?.instagramLink && (
+                                            <a href={company.instagramLink} target="_blank" rel="noopener noreferrer"
+                                                className="btn rounded-circle d-flex align-items-center justify-content-center"
+                                                style={{ width: '45px', height: '45px', borderColor: '#E1306C', color: '#E1306C' }} title="Instagram">
+                                                <FaInstagram size={20} />
+                                            </a>
+                                        )}
+
+                                        {company?.youtubeLink && (
+                                            <a href={company.youtubeLink} target="_blank" rel="noopener noreferrer"
+                                                className="btn rounded-circle d-flex align-items-center justify-content-center"
+                                                style={{ width: '45px', height: '45px', borderColor: '#FF0000', color: '#FF0000' }} title="YouTube">
+                                                <FaYoutube size={20} />
+                                            </a>
+                                        )}
+                                    </div>
+
+                                    {/* Display Names beneath icons if they exist */}
+                                    {(company?.instagramName || company?.youtubeName) && (
+                                        <div className="text-center mt-3">
+                                            <small className="text-muted italic">
+                                                {company?.instagramName && `${company.instagramName}`}
+                                                {company?.instagramName && company?.youtubeName && ' • '}
+                                                {company?.youtubeName}
+                                            </small>
+                                        </div>
+                                    )}
+                                </Card.Body>
                             </Card>
                         </div>
                     </Col>
