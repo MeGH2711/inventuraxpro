@@ -1,13 +1,15 @@
 import React from 'react';
-import { Container, Row, Col, Card, Button } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form } from 'react-bootstrap';
 import {
     MdBusiness,
     MdArrowForward,
-    MdSecurity
+    MdSecurity, MdDarkMode, MdLightMode
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
 const Settings = () => {
+    const { isDarkMode, toggleTheme } = useTheme();
     const navigate = useNavigate();
 
     const settingGroups = [
@@ -62,6 +64,33 @@ const Settings = () => {
                             </Card.Body>
                         </Card>
                     ))}
+                </Col>
+                <Col className='d-none'>
+                    <Card className="border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+                        <Card.Body className="p-4">
+                            <div className="d-flex align-items-center justify-content-between">
+                                <div className="d-flex align-items-center gap-3">
+                                    <div className="p-3 bg-light rounded-circle text-warning">
+                                        {isDarkMode ? <MdDarkMode size={24} /> : <MdLightMode size={24} />}
+                                    </div>
+                                    <div>
+                                        <h5 className="fw-bold mb-1">Appearance</h5>
+                                        <p className="text-muted small mb-0">
+                                            Switch between {isDarkMode ? "light" : "dark"} mode for your interface.
+                                        </p>
+                                    </div>
+                                </div>
+                                <Form.Check
+                                    type="switch"
+                                    id="theme-switch"
+                                    className="custom-switch-lg"
+                                    style={{ transform: 'scale(1.5)' }} // Makes the switch more prominent
+                                    checked={isDarkMode}
+                                    onChange={toggleTheme}
+                                />
+                            </div>
+                        </Card.Body>
+                    </Card>
                 </Col>
             </Row>
         </Container>

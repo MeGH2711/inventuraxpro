@@ -3,11 +3,13 @@ import { db } from '../firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { Offcanvas, Modal, Button, Form, Table, Toast, ToastContainer } from 'react-bootstrap';
 import { MdAdd, MdCategory, MdSearch, MdViewModule, MdViewList, MdEdit, MdDelete, MdShoppingBag } from 'react-icons/md';
+import { useTheme } from '../context/ThemeContext';
 
 import '../css/Products.css';
 import '../css/Loading.css';
 
 const Products = () => {
+    const { isDarkMode } = useTheme();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -191,7 +193,7 @@ const Products = () => {
             ) : (
                 <div className="card border-0 shadow-sm overflow-hidden">
                     <Table hover responsive className="mb-0 align-middle product-table">
-                        <thead className="bg-light text-muted small uppercase">
+                        <thead className={`${isDarkMode ? 'bg-dark text-light' : 'bg-light text-muted'} small uppercase`}>
                             <tr>
                                 <th className="ps-4">Product Name</th>
                                 <th>Weight / Pieces</th>
@@ -208,7 +210,7 @@ const Products = () => {
                                     <td><span className="badge-category-table">{p.category}</span></td>
                                     <td className="fw-bold">₹ {p.price.toFixed(2)}</td>
                                     <td className="text-center pe-4">
-                                        <Button variant="link" className="text-dark p-1 me-2" onClick={() => { setEditProduct(p); setShowProductDrawer(true); }}>
+                                        <Button variant="link" className={`${isDarkMode ? 'text-light' : 'text-dark'} p-1 me-2`} onClick={() => { setEditProduct(p); setShowProductDrawer(true); }}>
                                             <MdEdit size={18} />
                                         </Button>
                                         <Button variant="link" className="text-danger p-1" onClick={() => { setItemToDelete(p); setShowDeleteModal(true); }}>

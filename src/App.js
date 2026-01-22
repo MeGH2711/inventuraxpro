@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext"; import { ThemeProvider } from "./context/ThemeContext";
 import PrivateRoute from "./components/PrivateRoute";
 
 // Pages
@@ -14,7 +14,6 @@ import CompanyDetails from "./pages/CompanyDetails";
 import AccountSecurity from "./pages/AccountSecurity";
 import Billing from "./pages/Billing";
 import BillLogs from "./pages/BillLogs";
-import BillPreview from "./pages/BillPreview";
 import Analytics from "./pages/Analytics";
 import Customers from "./pages/Customers";
 
@@ -41,7 +40,7 @@ const Layout = ({ children }) => {
     // Handle dynamic routes (like IDs) or static mapping
     const currentPath = location.pathname;
 
-    if (currentPath.startsWith('/billpreview/')) {
+    if (currentPath.startsWith('/view/invoice/')) {
       document.title = 'Preview Bill | Inventurax';
     } else {
       document.title = titleMap[currentPath] || 'My App';
@@ -60,41 +59,42 @@ const Layout = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/view/invoice/:id" element={<PublicBill />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/view/invoice/:id" element={<PublicBill />} />
 
-          {/* 2. Wrap all protected routes in a way that Sidebar stays put */}
-          <Route
-            path="/*"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Routes>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/products" element={<Products />} />
+            {/* 2. Wrap all protected routes in a way that Sidebar stays put */}
+            <Route
+              path="/*"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Routes>
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/products" element={<Products />} />
 
-                    <Route path="/setting" element={<Setting />} />
-                    <Route path="/setting/company" element={<CompanyDetails />} />
-                    <Route path="/setting/security" element={<AccountSecurity />} />
+                      <Route path="/setting" element={<Setting />} />
+                      <Route path="/setting/company" element={<CompanyDetails />} />
+                      <Route path="/setting/security" element={<AccountSecurity />} />
 
-                    <Route path="/billing" element={<Billing />} />
-                    <Route path="/billlogs" element={<BillLogs />} />
-                    <Route path="/billpreview/:id" element={<BillPreview />} />
-                    <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/customers" element={<Customers />} />
+                      <Route path="/billing" element={<Billing />} />
+                      <Route path="/billlogs" element={<BillLogs />} />
+                      <Route path="/analytics" element={<Analytics />} />
+                      <Route path="/customers" element={<Customers />} />
 
-                    <Route path="/" element={<Navigate to="/dashboard" />} />
-                  </Routes>
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-        </Routes>
-      </Router>
-    </AuthProvider>
+                      <Route path="/" element={<Navigate to="/dashboard" />} />
+                    </Routes>
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

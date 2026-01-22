@@ -14,10 +14,47 @@
   --white: #ffffff;
   --black: #000000;
   --danger-color: #ff0000;
+  --cardBg: #ffffff;
+  --textColor: #212529;
+  --bs-secondary-color: #6c757d;
+  /*For Muted Text*/
+  --sidebarBg: rgb(10, 47, 79);
+  --sidebarActiveBg: #ffffff;
+  --sidebarActiveText: rgb(10, 47, 79);
+  --tableBorder: #2d3741;
+  --tableHover: #1c2630;
+  --gradientStart: #132b40;
+  --gradientEnd: #0a1f2e;
+}
+
+[data-theme='dark'] {
+  --mainThemeBackground: #0b1116;
+  --mainThemeColor: rgb(15, 68, 114);
+  --cardBg: #151d24;
+  --textColor: #f8f9fa;
+  --bs-secondary-color: #a0aab4;
+  /*For Muted Text*/
+  --sidebarBg: #0f171e;
+  --sidebarActiveBg: rgba(255, 255, 255, 0.15);
+  --sidebarActiveText: #ffffff;
+  --mainThemeBackground: #0b1116;
+  --tableHoverBg: rgba(255, 255, 255, 0.05);
 }
 
 body {
-  background-color: var(--mainThemeBackground);
+  background-color: var(--mainThemeBackground) !important;
+  color: var(--textColor) !important;
+  transition: background-color 0.3s ease;
+}
+
+.card {
+  background-color: var(--cardBg) !important;
+  color: var(--textColor) !important;
+}
+
+.text-muted {
+  --bs-text-opacity: 1;
+  color: var(--bs-secondary-color) !important;
 }
 
 .font-montserrat {
@@ -104,11 +141,23 @@ body {
   color: #f0f2f5 !important;
 }
 
+/* Quick Action Buttons - Outline Adjustment */
+[data-theme='dark'] .btn-outline-darkblue {
+  --bs-btn-color: #f8f9fa !important;
+  --bs-btn-border-color: #2d3741 !important;
+  --bs-btn-hover-bg: var(--mainThemeColor) !important;
+}
+
 /* CARDS & CONTAINERS */
 
 .gradient-card {
   background: linear-gradient(135deg, var(--mainThemeColor), var(--mainThemeColorLighterShade));
   color: var(--white);
+}
+
+[data-theme='dark'] .gradient-card {
+  background: linear-gradient(135deg, var(--gradientStart), var(--gradientEnd)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
 .gradient-card .card-title {
@@ -195,4 +244,31 @@ body {
 
 .input-group.shadow-sm:focus-within {
   box-shadow: 0 4px 12px rgba(10, 47, 79, 0.15), 0 0 0 0.25rem rgba(10, 47, 79, 0.2) !important;
+}
+
+/* Tables */
+
+[data-theme='dark'] .table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--textColor);
+  --bs-table-border-color: var(--tableBorder);
+  --bs-table-hover-bg: var(--tableHover);
+}
+
+[data-theme='dark'] .table>thead {
+  background-color: #0f171e !important;
+}
+
+[data-theme='dark'] .table-hover tbody tr:hover td,
+[data-theme='dark'] .table-hover tbody tr:hover th {
+  background-color: var(--tableHoverBg) !important;
+  color: var(--textColor) !important;
+  /* Forces text to stay light */
+  transition: background-color 0.2s ease;
+}
+
+/* Fix for the Bill Number (#1) specifically if it changes color */
+[data-theme='dark'] .table-hover tbody tr:hover .text-primary {
+  color: #4dabff !important;
+  /* A lighter blue for better contrast on hover */
 }

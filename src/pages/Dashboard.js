@@ -4,6 +4,7 @@ import {
     MdTrendingUp, MdPeople, MdReceipt, MdInventory,
     MdAccountBalanceWallet, MdArrowForward, MdLoop, MdInsights, MdOutlineSettingsSuggest
 } from 'react-icons/md';
+import { useTheme } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 
 // Firebase imports
@@ -12,6 +13,8 @@ import { collection, getDocs, getCountFromServer, query, orderBy, limit } from '
 
 const Dashboard = () => {
     const navigate = useNavigate();
+
+    const { isDarkMode } = useTheme();
 
     // State for live metrics
     const [totalProducts, setTotalProducts] = useState(0);
@@ -161,8 +164,8 @@ const Dashboard = () => {
                                 </div>
                             ) : recentBills.length > 0 ? (
                                 <Table responsive hover className="align-middle mb-0">
-                                    <thead className="bg-light">
-                                        <tr className="small text-uppercase text-muted">
+                                    <thead className={isDarkMode ? "bg-dark" : "bg-light"}>
+                                        <tr className={`small text-uppercase ${isDarkMode ? 'text-light' : 'text-dark'}`}>
                                             <th className="ps-4">Bill No</th>
                                             <th>Customer</th>
                                             <th>Date</th>
@@ -182,7 +185,7 @@ const Dashboard = () => {
                                                 <td className="small">{formatDate(bill.billingDate)}</td>
                                                 <td className="fw-bold">₹{bill.finalTotal?.toLocaleString('en-IN')}</td>
                                                 <td>
-                                                    <Badge bg="light" className="text-dark border">
+                                                    <Badge bg={isDarkMode ? "dark" : "light"} className="text-muted border">
                                                         {bill.modeOfPayment}
                                                     </Badge>
                                                 </td>

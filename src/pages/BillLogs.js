@@ -292,7 +292,7 @@ We look forward to serving you again soon!`;
                                                 variant="outline-primary"
                                                 size="sm"
                                                 className="me-2"
-                                                onClick={() => window.open(`/billpreview/${bill.id}`, '_blank')}
+                                                onClick={() => window.open(`/view/invoice/${bill.id}`, '_blank')}
                                             >
                                                 <MdVisibility />
                                             </Button>

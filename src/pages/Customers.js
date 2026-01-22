@@ -22,6 +22,8 @@ const Customers = () => {
     const [customerHistory, setCustomerHistory] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
 
+    const [historyView, setHistoryView] = useState('cards');
+
     const formatDisplayDate = (dateStr) => {
         if (!dateStr) return "N/A";
         const date = new Date(dateStr);
@@ -283,40 +285,46 @@ const Customers = () => {
                         <Row className="g-0 h-100">
                             {/* LEFT SIDEBAR */}
                             <Col md={4} lg={3} className="bg-white border-end h-100 shadow-sm z-1 d-flex flex-column" style={{ height: '100vh' }}>
-                                <div className="p-4 pb-0 text-center">
-                                    <div className="position-relative d-inline-block mb-3">
-                                        <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm mx-auto font-montserrat"
-                                            style={{ width: '80px', height: '80px', fontSize: '2rem', fontWeight: '800', border: '4px solid #f8f9fa' }}>
-                                            {selectedCustomer.name.charAt(0)}
-                                        </div>
-                                    </div>
-                                    <h4 className="fw-bold text-dark mb-1">{selectedCustomer.name}</h4>
-                                    <hr className="mt-2 mb-0" />
-                                </div>
-
                                 <div className="p-4 flex-grow-1 overflow-y-auto">
-                                    <div className="mb-4">
-                                        <Card className="border-0 bg-light rounded-4 p-3">
-                                            <div className="d-flex align-items-center mb-3">
-                                                <div className="bg-white p-2 rounded-3 shadow-sm me-3 text-primary"><MdPhone size={18} /></div>
-                                                <div>
-                                                    <div className="text-muted smallest fw-bold text-uppercase">Mobile</div>
-                                                    <div className="text-dark fw-bold small">{selectedCustomer.phone}</div>
-                                                </div>
-                                            </div>
-                                            <div className="d-flex align-items-start">
-                                                <div className="bg-white p-2 rounded-3 shadow-sm me-3 text-primary"><MdHome size={18} /></div>
-                                                <div>
-                                                    <div className="text-muted smallest fw-bold text-uppercase">Address</div>
-                                                    <div className="text-dark smallest lh-sm fw-semibold">{selectedCustomer.address}</div>
-                                                </div>
-                                            </div>
-                                        </Card>
-                                    </div>
 
+                                    {/* CONSOLIDATED PROFILE SECTION */}
+                                    <Card className="border-0 bg-light rounded-4 p-4 mb-4 text-center">
+                                        {/* Avatar */}
+                                        <div className="position-relative d-inline-block mb-3">
+                                            <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm mx-auto font-montserrat"
+                                                style={{ width: '80px', height: '80px', fontSize: '2rem', fontWeight: '800', border: '4px solid white' }}>
+                                                {selectedCustomer.name.charAt(0)}
+                                            </div>
+                                        </div>
+
+                                        {/* Name */}
+                                        <h4 className="fw-bold text-dark mb-3">{selectedCustomer.name}</h4>
+
+                                        <hr className="opacity-10 mb-3" />
+
+                                        {/* Mobile */}
+                                        <div className="d-flex align-items-center mb-3 text-start">
+                                            <div className="bg-white p-2 rounded-3 shadow-sm me-3 text-primary"><MdPhone size={18} /></div>
+                                            <div>
+                                                <div className="text-muted smallest fw-bold text-uppercase">Mobile</div>
+                                                <div className="text-dark fw-bold small">{selectedCustomer.phone}</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Address */}
+                                        <div className="d-flex align-items-start text-start">
+                                            <div className="bg-white p-2 rounded-3 shadow-sm me-3 text-primary"><MdHome size={18} /></div>
+                                            <div>
+                                                <div className="text-muted smallest fw-bold text-uppercase">Address</div>
+                                                <div className="text-dark smallest lh-sm fw-semibold">{selectedCustomer.address}</div>
+                                            </div>
+                                        </div>
+                                    </Card>
+
+                                    {/* INSIGHTS SECTION */}
                                     <div className="mb-4">
                                         <h6 className="fw-bold text-uppercase smallest text-muted mb-3">Insights</h6>
-                                        <div className="bg-dark text-white p-3 rounded-4 shadow-sm mb-3">
+                                        <div className="bg-dark text-white p-3 rounded-4 shadow-sm mb-3 text-center">
                                             <div className="smallest text-white-50 text-uppercase fw-bold mb-1">Lifetime Value</div>
                                             <div className="h4 fw-bold mb-0">₹{selectedCustomer.totalSpent.toFixed(2)}</div>
                                         </div>
@@ -336,6 +344,7 @@ const Customers = () => {
                                         </Row>
                                     </div>
 
+                                    {/* FAVORITE ITEMS SECTION */}
                                     <div className="mb-4">
                                         <h6 className="fw-bold text-uppercase smallest text-muted mb-3">Favorite Items</h6>
                                         <div className="bg-white border rounded-4 overflow-hidden">
@@ -363,10 +372,10 @@ const Customers = () => {
                                 </div>
 
                                 <div className="p-4 pt-0 border-top bg-white mt-auto">
-                                    <Button variant="success" className="w-100 py-3 rounded-4 fw-bold shadow-sm mb-2 mt-3" onClick={() => openWhatsApp(selectedCustomer.phone, selectedCustomer.name)}>
-                                        <FaWhatsapp className="me-2" /> Send WhatsApp
+                                    <Button variant="success" className="w-100 py-3 rounded-4 fw-bold shadow-sm mb-2 mt-3 d-flex justify-content-center align-items-center" onClick={() => openWhatsApp(selectedCustomer.phone, selectedCustomer.name)}>
+                                        <FaWhatsapp className="me-2 fs-5" /> Send WhatsApp
                                     </Button>
-                                    <Button variant="outline-danger" className="w-100 py-2 rounded-4 fw-bold smallest border-0" onClick={() => setShowProfile(false)}>
+                                    <Button variant="danger" className="w-100 py-2 rounded-4 fw-bold smallest border-0" onClick={() => setShowProfile(false)}>
                                         Close Profile
                                     </Button>
                                 </div>
@@ -375,46 +384,115 @@ const Customers = () => {
                             {/* RIGHT CONTENT: HISTORY */}
                             <Col md={8} lg={9} className="h-100 overflow-auto bg-light">
                                 <div className="p-4 p-lg-5">
-                                    <h3 className="fw-bold mb-4 d-flex align-items-center">
-                                        <MdReceipt className="me-2 text-primary" /> Order History
-                                    </h3>
+                                    <div className="d-flex justify-content-between align-items-center mb-4">
+                                        <h3 className="fw-bold mb-0 d-flex align-items-center">
+                                            <MdReceipt className="me-2 text-primary" /> Order History
+                                        </h3>
+
+                                        {/* View Toggle Buttons */}
+                                        <div className="bg-white p-1 rounded-pill shadow-sm border">
+                                            <Button
+                                                variant={historyView === 'cards' ? 'primary' : 'light'}
+                                                size="sm"
+                                                className="rounded-pill px-3 border-0"
+                                                onClick={() => setHistoryView('cards')}
+                                            >
+                                                Cards
+                                            </Button>
+                                            <Button
+                                                variant={historyView === 'table' ? 'primary' : 'light'}
+                                                size="sm"
+                                                className="rounded-pill px-3 border-0"
+                                                onClick={() => setHistoryView('table')}
+                                            >
+                                                Table
+                                            </Button>
+                                        </div>
+                                    </div>
 
                                     {historyLoading ? (
                                         <div className="text-center py-5"><Spinner animation="border" variant="primary" /></div>
                                     ) : (
-                                        <Row className="g-4">
-                                            {customerHistory.map(bill => (
-                                                <Col xl={6} key={bill.id}>
-                                                    <Card className="border-0 shadow-sm rounded-4 h-100">
-                                                        <Card.Body className="p-4">
-                                                            <div className="d-flex justify-content-between align-items-start mb-3">
-                                                                <div>
-                                                                    <div className="badge bg-dark mb-2 px-3">Bill #{bill.billNumber}</div>
-                                                                    <div className="small text-muted d-flex align-items-center">
-                                                                        <MdEvent className="me-1" /> {formatDisplayDate(bill.billingDate)}
+                                        <>
+                                            {historyView === 'cards' ? (
+                                                /* CARD VIEW */
+                                                <Row className="g-4">
+                                                    {customerHistory.map(bill => (
+                                                        <Col xl={6} key={bill.id}>
+                                                            <Card className="border-0 shadow-sm rounded-4 h-100">
+                                                                <Card.Body className="p-4">
+                                                                    <div className="d-flex justify-content-between align-items-start mb-3">
+                                                                        <div>
+                                                                            <div className="badge bg-dark mb-2 px-3">Bill #{bill.billNumber}</div>
+                                                                            <div className="small text-muted d-flex align-items-center">
+                                                                                <MdEvent className="me-1" /> {formatDisplayDate(bill.billingDate)}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="text-end">
+                                                                            <div className="small text-muted fw-bold">TOTAL</div>
+                                                                            <div className="h4 fw-bold text-primary mb-0">₹{bill.finalTotal?.toFixed(2)}</div>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                                <div className="text-end">
-                                                                    <div className="small text-muted fw-bold">TOTAL</div>
-                                                                    <div className="h4 fw-bold text-primary mb-0">₹{bill.finalTotal?.toFixed(2)}</div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="d-flex gap-2 mb-3">
-                                                                <Badge bg="white" text="dark" className="border px-3 py-2">{bill.modeOfPayment}</Badge>
-                                                                <Badge bg="white" text="dark" className="border px-3 py-2">{bill.modeOfDelivery}</Badge>
-                                                            </div>
-                                                            <Button
-                                                                variant="outline-dark"
-                                                                className="w-100 rounded-pill fw-bold"
-                                                                onClick={() => window.open(`/billpreview/${bill.id}`, '_blank')}
-                                                            >
-                                                                <MdVisibility className="me-2" /> View Detailed Invoice
-                                                            </Button>
-                                                        </Card.Body>
-                                                    </Card>
-                                                </Col>
-                                            ))}
-                                        </Row>
+                                                                    <div className="d-flex gap-2 mb-3">
+                                                                        <Badge bg="white" text="dark" className="border px-3 py-2">{bill.modeOfPayment}</Badge>
+                                                                        <Badge bg="white" text="dark" className="border px-3 py-2">{bill.modeOfDelivery}</Badge>
+                                                                    </div>
+                                                                    <Button
+                                                                        variant="outline-dark"
+                                                                        className="w-100 rounded-pill fw-bold"
+                                                                        onClick={() => window.open(`/view/invoice/${bill.id}`, '_blank')}
+                                                                    >
+                                                                        <MdVisibility className="me-2" /> View Detailed Invoice
+                                                                    </Button>
+                                                                </Card.Body>
+                                                            </Card>
+                                                        </Col>
+                                                    ))}
+                                                </Row>
+                                            ) : (
+                                                /* TABLE VIEW */
+                                                <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
+                                                    <Table responsive hover className="mb-0 align-middle">
+                                                        <thead className="bg-white text-muted smallest text-uppercase fw-bold border-bottom">
+                                                            <tr>
+                                                                <th className="ps-4 py-3">Bill #</th>
+                                                                <th>Date</th>
+                                                                <th>Payment</th>
+                                                                <th>Delivery</th>
+                                                                <th>Amount</th>
+                                                                <th className="text-end pe-4">Action</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {customerHistory.map(bill => (
+                                                                <tr key={bill.id}>
+                                                                    <td className="ps-4 fw-bold">#{bill.billNumber}</td>
+                                                                    <td className="small">{formatDisplayDate(bill.billingDate)}</td>
+                                                                    <td><Badge bg="light" text="dark" className="border">{bill.modeOfPayment}</Badge></td>
+                                                                    <td><Badge bg="light" text="dark" className="border">{bill.modeOfDelivery}</Badge></td>
+                                                                    <td className="fw-bold text-primary">₹{bill.finalTotal?.toFixed(2)}</td>
+                                                                    <td className="text-end pe-4">
+                                                                        <Button
+                                                                            variant="link"
+                                                                            className="p-0 text-dark"
+                                                                            onClick={() => window.open(`/view/invoice/${bill.id}`, '_blank')}
+                                                                        >
+                                                                            <MdVisibility size={20} />
+                                                                        </Button>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </Table>
+                                                </Card>
+                                            )}
+
+                                            {customerHistory.length === 0 && (
+                                                <div className="text-center py-5 bg-white rounded-4 shadow-sm">
+                                                    <p className="text-muted mb-0">No order history found for this customer.</p>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </Col>
