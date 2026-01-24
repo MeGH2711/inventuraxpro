@@ -43,9 +43,9 @@ const Layout = ({ children }) => {
     if (currentPath.startsWith('/view/invoice/')) {
       document.title = 'Preview Bill | Inventurax';
     } else {
-      document.title = titleMap[currentPath] || 'My App';
+      document.title = titleMap[currentPath] || 'Inventurax';
     }
-  }, [location]); // Re-runs every time the URL changes
+  }, [location]);
 
   return (
     <div className="d-flex">

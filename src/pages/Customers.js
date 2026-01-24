@@ -226,52 +226,64 @@ const Customers = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {processedCustomers.map((customer, index) => (
-                                    <tr key={index} style={{ cursor: 'pointer' }}>
-                                        <td className="ps-4 py-3">
-                                            <div className="d-flex align-items-center">
-                                                <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold me-3"
-                                                    style={{ width: '40px', height: '40px', fontSize: '0.9rem' }}>
-                                                    {customer.name.charAt(0)}
+                                {processedCustomers.length > 0 ? (
+                                    processedCustomers.map((customer, index) => (
+                                        <tr key={index} style={{ cursor: 'pointer' }}>
+                                            {/* ... existing <td> content ... */}
+                                            <td className="ps-4 py-3">
+                                                <div className="d-flex align-items-center">
+                                                    <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold me-3"
+                                                        style={{ width: '40px', height: '40px', fontSize: '0.9rem' }}>
+                                                        {customer.name.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <div className="fw-bold text-dark">{customer.name}</div>
+                                                        <div className="text-muted smallest">{customer.phone}</div>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <div className="fw-bold text-dark">{customer.name}</div>
-                                                    <div className="text-muted smallest">{customer.phone}</div>
-                                                </div>
+                                            </td>
+                                            <td className="text-muted smallest" style={{ maxWidth: '200px' }}>
+                                                <div className="text-truncate"><MdHome size={14} className="me-1" /> {customer.address}</div>
+                                            </td>
+                                            <td>
+                                                {customer.totalSpent > 5000 ? (
+                                                    <Badge bg="warning-subtle" text="warning" className="rounded-pill border border-warning px-2 py-1">
+                                                        <MdStar size={12} className="me-1" /> VIP
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge bg="light" text="muted" className="rounded-pill border px-2 py-1">Regular</Badge>
+                                                )}
+                                            </td>
+                                            <td className="fw-bold text-dark">
+                                                ₹{customer.totalSpent.toFixed(2)}
+                                            </td>
+                                            <td>
+                                                <span className="badge rounded-pill bg-light text-dark border px-2 py-1">{customer.totalBills} Bills</span>
+                                            </td>
+                                            <td className="text-muted small">
+                                                {customer.lastVisit}
+                                            </td>
+                                            <td className="text-end pe-4">
+                                                <Button variant="outline-success" size="sm" className="me-2 rounded-3 px-3 py-2" onClick={(e) => { e.stopPropagation(); openWhatsApp(customer.phone, customer.name); }}>
+                                                    <FaWhatsapp />
+                                                </Button>
+                                                <Button variant="dark" size="sm" className="rounded-3 px-3 py-2" onClick={() => fetchCustomerHistory(customer)}>
+                                                    Profile
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="7" className="text-center py-5 text-muted">
+                                            <div className="d-flex flex-column align-items-center">
+                                                <MdSearch size={40} className="mb-2 opacity-25" />
+                                                <p className="mb-0 fw-semibold">No customers found</p>
+                                                <small>Try adjusting your search or filters</small>
                                             </div>
                                         </td>
-                                        {/* New Address Cell */}
-                                        <td className="text-muted smallest" style={{ maxWidth: '200px' }}>
-                                            <div className="text-truncate"><MdHome size={14} className="me-1" /> {customer.address}</div>
-                                        </td>
-                                        <td>
-                                            {customer.totalSpent > 5000 ? (
-                                                <Badge bg="warning-subtle" text="warning" className="rounded-pill border border-warning px-2 py-1">
-                                                    <MdStar size={12} className="me-1" /> VIP
-                                                </Badge>
-                                            ) : (
-                                                <Badge bg="light" text="muted" className="rounded-pill border px-2 py-1">Regular</Badge>
-                                            )}
-                                        </td>
-                                        <td className="fw-bold text-dark">
-                                            ₹{customer.totalSpent.toFixed(2)}
-                                        </td>
-                                        <td>
-                                            <span className="badge rounded-pill bg-light text-dark border px-2 py-1">{customer.totalBills} Bills</span>
-                                        </td>
-                                        <td className="text-muted small">
-                                            {customer.lastVisit}
-                                        </td>
-                                        <td className="text-end pe-4">
-                                            <Button variant="outline-success" size="sm" className="me-2 rounded-3 px-3 py-2" onClick={(e) => { e.stopPropagation(); openWhatsApp(customer.phone, customer.name); }}>
-                                                <FaWhatsapp />
-                                            </Button>
-                                            <Button variant="dark" size="sm" className="rounded-3 px-3 py-2" onClick={() => fetchCustomerHistory(customer)}>
-                                                Profile
-                                            </Button>
-                                        </td>
                                     </tr>
-                                ))}
+                                )}
                             </tbody>
                         </Table>
                     )}
