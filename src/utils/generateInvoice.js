@@ -2,6 +2,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import QRCode from 'qrcode';
 import billLogo from '../assets/images/billLogo.png';
+import youtubeLogo from '../assets/images/youtubeLogo.png';
+import instaLogo from '../assets/images/instaLogo.png';
 
 export const generateInvoice = async (data, company = {}) => {
     if (!company) { company = {}; }
@@ -139,31 +141,74 @@ export const generateInvoice = async (data, company = {}) => {
     } catch (e) { console.error("QR Error", e); }
 
     // --- 5. Footer with Clickable Links ---
-    const footerY = 280;
-    doc.setFontSize(8).setTextColor(150).setFont("helvetica", "normal");
-    doc.text("Thank you for choosing De Baker's & More!", pageWidth / 2, footerY, { align: "center" });
+    // --- 5. Redesigned Premium Footer with Icons ---
+    const footerY = 272;
+    const iconSize = 5;
+    const socialFontSize = 9;
 
-    doc.setTextColor(0, 0, 255).setFont("helvetica", "bold"); // Blue for links
+    // 1. Decorative Separator
+    doc.setDrawColor(220, 220, 220).setLineWidth(0.2).line(margin, footerY - 5, pageWidth - margin, footerY - 5);
 
-    // Instagram Link
-    const igText = `Instagram: ${company?.instagramName || "@YourInstaHandle"}`;
-    const igWidth = doc.getTextWidth(igText);
-    const igX = (pageWidth / 2) - igWidth - 5;
-    doc.text(igText, igX, footerY + 5);
+    // 2. Main Thank You Note
+    doc.setFontSize(10).setTextColor(...brandColor).setFont("helvetica", "bold");
+    doc.text("Thank you for visting us!", pageWidth / 2, footerY, { align: "center" });
+
+    // 3. Social Media Row
+    // We'll calculate total width to keep the icons and text perfectly centered
+    const igLabel = company?.instagramName || "@debakers_official";
+    const ytLabel = company?.youtubeName || "De Baker's Kitchen";
+
+    const igWidth = iconSize + 2 + doc.getTextWidth(igLabel);
+    const ytWidth = iconSize + 2 + doc.getTextWidth(ytLabel);
+    const spacing = 15;
+    const totalRowWidth = igWidth + ytWidth + spacing;
+
+    let startX = (pageWidth - totalRowWidth) / 2;
+    const contentY = footerY + 8;
+
+    // --- Instagram Section ---
+    try {
+        doc.addImage(instaLogo, 'PNG', startX, contentY - 4, iconSize, iconSize);
+    } catch (e) { /* Fallback if image fails */ }
+
+    doc.setFontSize(socialFontSize).setTextColor(80).setFont("helvetica", "normal");
+    doc.text(igLabel, startX + iconSize + 2, contentY);
     if (company?.instagramLink) {
-        doc.link(igX, footerY + 1, igWidth, 5, { url: company.instagramLink });
-        doc.setDrawColor(0, 0, 255).line(igX, footerY + 5.5, igX + igWidth, footerY + 5.5); // Underline
+        doc.link(startX, contentY - 4, igWidth, iconSize, { url: company.instagramLink });
     }
 
-    // YouTube Link
-    const ytText = `YouTube: ${company?.youtubeName || "@YourYoutubeHandle"}`;
-    const ytWidth = doc.getTextWidth(ytText);
-    const ytX = (pageWidth / 2) + 5;
-    doc.text(ytText, ytX, footerY + 5);
+    // --- YouTube Section ---
+    startX += igWidth + spacing;
+    try {
+        doc.addImage(youtubeLogo, 'PNG', startX, contentY - 4, iconSize, iconSize);
+    } catch (e) { }
+
+    doc.text(ytLabel, startX + iconSize + 2, contentY);
     if (company?.youtubeLink) {
-        doc.link(ytX, footerY + 1, ytWidth, 5, { url: company.youtubeLink });
-        doc.setDrawColor(0, 0, 255).line(ytX, footerY + 5.5, ytX + ytWidth, footerY + 5.5); // Underline
+        doc.link(startX, contentY - 4, ytWidth, iconSize, { url: company.youtubeLink });
     }
+    // --- Redesigned Clickable Website (Modern Pill Style) ---
+    const siteUrl = company.website || "debakersandmore.vercel.app";
+    const cleanUrl = siteUrl.replace(/^https?:\/\//, ''); // Display version without https
+    const linkUrl = siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`;
+
+    doc.setFontSize(8).setFont("helvetica", "bold");
+    const siteWidth = doc.getTextWidth(cleanUrl);
+    const padding = 4;
+    const rectWidth = siteWidth + (padding * 2);
+    const rectX = (pageWidth / 2) - (rectWidth / 2);
+    const siteY = footerY + 18;
+
+    // Background "Pill"
+    doc.setFillColor(240, 240, 240);
+    doc.roundedRect(rectX, siteY - 4.5, rectWidth, 6.5, 3, 3, 'F');
+
+    // Text (Darker Grey for a premium look)
+    doc.setTextColor(60, 60, 60);
+    doc.text(cleanUrl, pageWidth / 2, siteY, { align: "center" });
+
+    // Invisible Link Layer
+    doc.link(rectX, siteY - 4.5, rectWidth, 6.5, { url: linkUrl });
 
     // --- Save File ---
     const numericStamp = getNumericTimestamp(billingData?.billingDate, billingData?.billingTime);
