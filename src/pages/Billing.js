@@ -1,19 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
+
+// Firebase
 import { db } from '../firebaseConfig';
 import {
     collection, getDocs, query, orderBy,
     addDoc, serverTimestamp, getCountFromServer, doc, getDoc, limit
 } from 'firebase/firestore';
+
+// Bootstrap
 import { Form, Button, Card, Row, Col, Table, ListGroup, Toast, ToastContainer, Modal } from 'react-bootstrap';
+
+// Icons
 import {
     MdDelete, MdReceipt, MdPerson, MdLocalShipping, MdSearch,
     MdChevronRight, MdChevronLeft, MdFileDownload, MdSave, MdMessage
 } from 'react-icons/md';
 
+// Theme
+import { useTheme } from '../context/ThemeContext';
+
 // Import the external designer PDF utility
 import { generateInvoice } from '../utils/generateInvoice';
 
 const Billing = () => {
+    const { isDarkMode } = useTheme();
     // Core Logic States
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
@@ -379,9 +389,13 @@ We look forward to serving you again soon!`;
                     <p className="text-muted small mb-0">Generate and print customer invoices.</p>
                 </div>
                 <div className="d-flex align-items-center gap-3">
-                    <div className="bg-light px-3 py-2 rounded-3 border d-flex align-items-center shadow-sm">
-                        <span className="small fw-bold text-muted text-uppercase me-2">Bill No:</span>
-                        <span className="fw-bold text-dark">{nextBillNumber}</span>
+                    <div className={`px-3 py-2 rounded-3 border d-flex align-items-center shadow-sm ${isDarkMode ? 'bg-dark border-secondary' : 'bg-light'}`}>
+                        <span className={`small fw-bold text-uppercase me-2 ${isDarkMode ? 'text-light' : 'text-muted'}`}>
+                            Bill No:
+                        </span>
+                        <span className={`fw-bold ${isDarkMode ? 'text-white' : 'text-dark'}`}>
+                            {nextBillNumber}
+                        </span>
                     </div>
                     <Button variant="dark" className="px-4 py-2 shadow-sm" onClick={handleOpenReviewModal}>
                         <MdReceipt className="me-2" /> Complete Transaction
@@ -470,19 +484,21 @@ We look forward to serving you again soon!`;
 
                 <Col lg={8}>
                     <Card className="border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
-                        <Card.Header className="bg-white border-0 pt-4 px-4 position-relative">
+                        <Card.Header className={`border-0 pt-4 px-4 position-relative ${isDarkMode ? 'bg-dark' : 'bg-white'}`}>
                             <div className="input-group" ref={suggestionRef}>
-                                <span className="input-group-text bg-light border-0"><MdSearch /></span>
+                                <span className={`input-group-text border-0 ${isDarkMode ? 'bg-dark text-light' : 'bg-light'}`}>
+                                    <MdSearch />
+                                </span>
                                 <Form.Control
                                     placeholder="Type product name to add..."
                                     value={searchTerm}
                                     onChange={handleSearch}
                                     onKeyDown={handleKeyDown}
-                                    className="bg-light border-0 shadow-none py-2"
+                                    className={`border-0 shadow-none py-2 ${isDarkMode ? 'bg-dark text-light' : 'bg-light'}`}
                                     autoComplete="off"
                                 />
                                 {showSuggestions && (
-                                    <ListGroup className="position-absolute w-100 shadow-lg" style={{ top: '100%', left: 0, zIndex: 1060 }}>
+                                    <ListGroup className="position-absolute w-100 shadow-lg billing-suggestion-list" style={{ top: '100%', left: 0, zIndex: 1060 }}>
                                         {suggestions.map((p, index) => (
                                             <ListGroup.Item
                                                 key={p.id}
@@ -507,8 +523,8 @@ We look forward to serving you again soon!`;
                             </div>
                         </Card.Header>
                         <Card.Body className="p-0">
-                            <Table responsive bordered hover className="mb-0 align-middle text-center">
-                                <thead className="bg-light text-uppercase small">
+                            <Table responsive bordered hover className={`mb-0 align-middle text-center ${isDarkMode ? 'table-dark border-secondary' : ''}`}>
+                                <thead className={`${isDarkMode ? 'bg-dark text-light' : 'bg-light text-muted'} small uppercase`}>
                                     <tr><th>Product Name</th><th style={{ width: '100px' }}>Qty</th><th>Price</th><th>Total</th><th style={{ width: '100px' }}>Disc %</th><th>Final</th><th className="text-center">Action</th></tr>
                                 </thead>
                                 <tbody>

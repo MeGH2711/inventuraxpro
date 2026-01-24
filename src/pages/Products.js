@@ -302,7 +302,7 @@ const Products = () => {
                     }} className="mb-4">
                         <div className="input-group shadow-sm">
                             <Form.Control placeholder="New category..." value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} />
-                            <Button variant="darkblue" type="submit">Add</Button>
+                            <Button variant="darkblue rounded-start-2" type="submit">Add</Button>
                         </div>
                     </Form>
                     <div className="category-scroll-area">

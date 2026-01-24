@@ -235,7 +235,12 @@ body {
 .input-group:focus-within .input-group-text {
   border-color: var(--mainThemeColorLighterShade) !important;
   color: var(--mainThemeColor) !important;
-  background-color: #fff !important;
+  background-color: var(--cardBg) !important;
+}
+
+[data-theme='dark'] .input-group:focus-within .input-group-text {
+  color: var(--textColor) !important;
+  background-color: #1a2632 !important;
 }
 
 .input-group:focus-within .form-control {
@@ -272,4 +277,52 @@ body {
 [data-theme='dark'] .table-hover tbody tr:hover .text-primary {
   color: #4dabff !important;
   /* A lighter blue for better contrast on hover */
+}
+
+/* Billing */
+
+/* Billing Page Dark Mode Enhancements */
+[data-theme='dark'] .billing-suggestion-list {
+  background-color: var(--cardBg) !important;
+  border: 1px solid var(--tableBorder) !important;
+}
+
+[data-theme='dark'] .billing-suggestion-list .list-group-item {
+  background-color: var(--cardBg) !important;
+  color: var(--textColor) !important;
+  border-color: var(--tableBorder) !important;
+}
+
+[data-theme='dark'] .billing-suggestion-list .list-group-item:hover,
+[data-theme='dark'] .billing-suggestion-list .list-group-item.active {
+  background-color: var(--tableHover) !important;
+}
+
+/* Table Footer Styling for Dark Mode */
+[data-theme='dark'] .table tfoot.bg-light {
+  background-color: #0f171e !important;
+  color: var(--textColor) !important;
+}
+
+[data-theme='dark'] .table tfoot input {
+  background-color: #1a2632 !important;
+  border-color: #2d3741 !important;
+  color: #ffffff !important;
+}
+
+/* Modal Dark Theme */
+[data-theme='dark'] .modal-content {
+  background-color: var(--cardBg);
+  color: var(--textColor);
+  border: 1px solid var(--tableBorder);
+}
+
+[data-theme='dark'] .modal-header .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Fixed Total Box adjustment */
+[data-theme='dark'] #finalTotalFixedBox {
+  background-color: var(--mainThemeColor) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
