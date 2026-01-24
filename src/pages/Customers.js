@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebaseConfig';
-import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
-import { Container, Row, Col, Card, Table, Form, InputGroup, Button, Spinner, Modal, Badge, Dropdown } from 'react-bootstrap';
-import {
-    MdSearch, MdReceipt,
-    MdEvent, MdVisibility, MdPhone,
-    MdHome, MdStar, MdSort
-} from 'react-icons/md';
 
+// Firebase
+import { db } from '../firebaseConfig';
+import {
+    doc, getDoc, setDoc,
+    collection, getDocs, query, orderBy, limit, where
+} from 'firebase/firestore';
+
+// Bootstrap
+import {
+    Container, Row, Col, Card, Table, Form, InputGroup,
+    Button, Spinner, Modal, Badge, Dropdown, Offcanvas
+} from 'react-bootstrap';
+
+// Icons
+import {
+    MdSearch, MdReceipt, MdEvent, MdVisibility, MdPhone, MdHome, MdStar,
+    MdSort, MdMessage
+} from 'react-icons/md';
 import { FaWhatsapp } from "react-icons/fa";
 
 const Customers = () => {
@@ -23,6 +33,79 @@ const Customers = () => {
     const [historyLoading, setHistoryLoading] = useState(false);
 
     const [historyView, setHistoryView] = useState('cards');
+
+    const [showMsgSettings, setShowMsgSettings] = useState(false);
+    const [customMessage, setCustomMessage] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        const fetchWhatsAppSettings = async () => {
+            try {
+                const docRef = doc(db, "settings", "whatsappMessage");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setCustomMessage(docSnap.data().template || "");
+                }
+            } catch (error) {
+                console.error("Error fetching message template:", error);
+            }
+        };
+        fetchWhatsAppSettings();
+    }, []);
+
+    const saveMessageTemplate = async () => {
+        setIsSaving(true);
+        try {
+            const docRef = doc(db, "settings", "whatsappMessage");
+            await setDoc(docRef, {
+                template: customMessage,
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+            setShowMsgSettings(false);
+        } catch (error) {
+            console.error("Error saving message template:", error);
+            alert("Failed to save message.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const textAreaRef = React.useRef(null);
+
+    const applyStyle = (prefix, suffix = prefix) => {
+        const el = textAreaRef.current;
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        const text = el.value;
+        const selected = text.substring(start, end);
+
+        const newText = text.substring(0, start) + prefix + selected + suffix + text.substring(end);
+        setCustomMessage(newText);
+
+        el.focus();
+    };
+
+    const renderWhatsAppPreview = (text) => {
+        if (!text) return "Compose your message...";
+
+        // Personalize name
+        let formatted = text.replace(/{name}/g, 'John Doe');
+
+        // Order of operations matters to prevent overlap
+        return formatted
+            .split('\n').map((line, i) => {
+                let processedLine = line
+                    .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
+                    .replace(/_(.*?)_/g, '<em>$1</em>')
+                    .replace(/~(.*?)~/g, '<del>$1</del>')
+                    .replace(/```(.*?)```/g, '<code style="background:#d1d1d1; padding:0 4px; border-radius:3px; font-family:monospace">$1</code>')
+                    .replace(/`(.*?)`/g, '<code style="background:#d1d1d1; padding:0 4px; border-radius:3px; font-family:monospace">$1</code>')
+                    .replace(/^> (.*)$/g, '<span style="border-left: 3px solid #30b489; padding-left: 10px; color: #555; display: block;">$1</span>')
+                    .replace(/^\* (.*)$/g, '• $1');
+
+                return <div key={i} dangerouslySetInnerHTML={{ __html: processedLine || '&nbsp;' }} />;
+            });
+    };
 
     const formatDisplayDate = (dateStr) => {
         if (!dateStr) return "N/A";
@@ -99,8 +182,11 @@ const Customers = () => {
         }
     };
 
-    const openWhatsApp = (phone) => {
-        window.open(`https://wa.me/91${phone.replace(/\D/g, '')}`, '_blank');
+    const openWhatsApp = (phone, name) => {
+        const personalizedMsg = customMessage.replace(/{name}/g, name);
+        const encodedMsg = encodeURIComponent(personalizedMsg);
+
+        window.open(`https://wa.me/91${phone.replace(/\D/g, '')}?text=${encodedMsg}`, '_blank');
     };
 
     const processedCustomers = customers
@@ -142,6 +228,13 @@ const Customers = () => {
                     <p className="text-muted small mb-0">Manage relationships and track lifetime value for De Baker's & More.</p>
                 </div>
                 <div className="d-flex gap-3">
+                    <Button
+                        variant="darkblue"
+                        className="rounded-pill px-3 d-flex align-items-center"
+                        onClick={() => setShowMsgSettings(true)}
+                    >
+                        <MdMessage className="mx-2" /> Message Settings
+                    </Button>
                     <div className="bg-white px-3 py-2 rounded-3 shadow-sm border-start border-4 border-primary">
                         <div className="smallest text-muted text-uppercase fw-bold">Total Sales</div>
                         <div className="fw-bold">₹{stats.totalRevenue.toLocaleString()}</div>
@@ -264,7 +357,15 @@ const Customers = () => {
                                                 {customer.lastVisit}
                                             </td>
                                             <td className="text-end pe-4">
-                                                <Button variant="outline-success" size="sm" className="me-2 rounded-3 px-3 py-2" onClick={(e) => { e.stopPropagation(); openWhatsApp(customer.phone, customer.name); }}>
+                                                <Button
+                                                    variant="outline-success"
+                                                    size="sm"
+                                                    className="me-2 rounded-3 px-3 py-2"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        openWhatsApp(customer.phone, customer.name);
+                                                    }}
+                                                >
                                                     <FaWhatsapp />
                                                 </Button>
                                                 <Button variant="dark" size="sm" className="rounded-3 px-3 py-2" onClick={() => fetchCustomerHistory(customer)}>
@@ -512,6 +613,73 @@ const Customers = () => {
                     )}
                 </Modal.Body>
             </Modal>
+            <Offcanvas show={showMsgSettings} onHide={() => setShowMsgSettings(false)} placement="end" className="rounded-start-4">
+                <Offcanvas.Header closeButton className="border-bottom">
+                    <Offcanvas.Title className="fw-bold">Campaign Editor</Offcanvas.Title>
+                </Offcanvas.Header>
+                <Offcanvas.Body>
+                    {/* STYLING TOOLBAR */}
+                    <div className="d-flex flex-wrap gap-1 mb-2 bg-light p-2 rounded-3 border">
+                        <Button variant="white" size="sm" className="border shadow-sm" onClick={() => applyStyle('*')}><b>B</b></Button>
+                        <Button variant="white" size="sm" className="border shadow-sm" onClick={() => applyStyle('_')}><i>I</i></Button>
+                        <Button variant="white" size="sm" className="border shadow-sm" onClick={() => applyStyle('~')}><del>S</del></Button>
+                        <Button variant="white" size="sm" className="border shadow-sm" onClick={() => applyStyle('```')}>Code</Button>
+                        <Button variant="white" size="sm" className="border shadow-sm" onClick={() => applyStyle('* ', '')}>List</Button>
+                        <Button variant="white" size="sm" className="border shadow-sm" onClick={() => applyStyle('> ', '')}>Quote</Button>
+                        <Button variant="outline-primary" size="sm" className="ms-auto" onClick={() => applyStyle('{name}', '')}>+ Name</Button>
+                    </div>
+
+                    <Form.Control
+                        ref={textAreaRef}
+                        as="textarea"
+                        rows={10}
+                        className="rounded-3 border-2 shadow-sm mb-3"
+                        value={customMessage}
+                        onChange={(e) => setCustomMessage(e.target.value)}
+                    />
+
+                    <div className="mb-4">
+                        <h6 className="smallest fw-bold text-uppercase mb-3 text-primary">WhatsApp Preview</h6>
+
+                        {/* WhatsApp Background Simulation */}
+                        <div
+                            className="p-3 rounded-4 shadow-inner"
+                            style={{
+                                backgroundColor: '#e5ddd5',
+                                backgroundImage: `url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')`,
+                                minHeight: '200px'
+                            }}
+                        >
+                            {/* Chat Bubble */}
+                            <div
+                                className="bg-white p-3 rounded-3 shadow-sm position-relative shadow-sm"
+                                style={{
+                                    maxWidth: '90%',
+                                    width: 'fit-content',
+                                    fontSize: '0.92rem',
+                                    lineHeight: '1.4',
+                                    color: '#111b21',
+                                    borderRadius: '0 15px 15px 15px'
+                                }}
+                            >
+                                {/* The actual formatted text */}
+                                <div style={{ whiteSpace: 'pre-wrap' }}>
+                                    {renderWhatsAppPreview(customMessage)}
+                                </div>
+
+                                {/* Timestamp Mockup */}
+                                <div className="text-end text-primary mt-1" style={{ fontSize: '0.65rem' }}>
+                                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ✓✓
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Button variant="primary" className="w-100 py-3 rounded-4 fw-bold" onClick={saveMessageTemplate} disabled={isSaving}>
+                        {isSaving ? <Spinner animation="border" size="sm" /> : 'Save Template'}
+                    </Button>
+                </Offcanvas.Body>
+            </Offcanvas>
         </Container>
     );
 };
