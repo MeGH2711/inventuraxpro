@@ -103,27 +103,29 @@ const BillLogs = () => {
         generateInvoice(invoiceData, companyInfo);
     };
 
-    const openWhatsApp = (bill) => {
-        const baseUrl = window.location.origin;
-        const shareLink = `${baseUrl}/view/invoice/${bill.id}`;
+    const openWhatsApp = async (bill) => {
+        try {
+            const msgRef = doc(db, "settings", "billWhatsappMessage");
+            const msgSnap = await getDoc(msgRef);
 
-        if (bill.customerNumber) {
-            const number = bill.customerNumber.replace(/\D/g, '');
-            const brandName = companyInfo?.brandName || "De Baker's & More";
+            let messageTemplate = msgSnap.exists()
+                ? msgSnap.data().template
+                : `Hello {name},\n\nTotal: ₹{total}\n\nInvoice: {link}`;
 
-            // Professional Template
-            const message = `Hello ${bill.customerName || 'Customer'},
+            const baseUrl = window.location.origin;
+            const shareLink = `${baseUrl}/view/invoice/${bill.id}`;
 
-Thank you for choosing ${brandName}!
+            const finalMessage = messageTemplate
+                .replace(/{name}/g, bill.customerName || 'Customer')
+                .replace(/{total}/g, bill.finalTotal.toFixed(2))
+                .replace(/{link}/g, shareLink);
 
-Total Amount: ₹${bill.finalTotal.toFixed(2)}
-
-You can view and download your digital invoice here:
-${shareLink}
-
-We look forward to serving you again soon!`;
-
-            window.open(`https://wa.me/91${number}?text=${encodeURIComponent(message)}`, '_blank');
+            if (bill.customerNumber) {
+                const number = bill.customerNumber.replace(/\D/g, '');
+                window.open(`https://wa.me/91${number}?text=${encodeURIComponent(finalMessage)}`, '_blank');
+            }
+        } catch (error) {
+            console.error("WhatsApp error:", error);
         }
     };
 

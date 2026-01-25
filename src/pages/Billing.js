@@ -357,27 +357,42 @@ const Billing = () => {
         }
     };
 
-    const openWhatsApp = (billId) => {
-        const baseUrl = window.location.origin;
-        const shareLink = `${baseUrl}/view/invoice/${billId}`;
+    const openWhatsApp = async (billId) => {
+        try {
+            // 1. Fetch the custom template from Firestore
+            const msgRef = doc(db, "settings", "billWhatsappMessage");
+            const msgSnap = await getDoc(msgRef);
 
-        if (lastSavedBill?.billingData?.contactNumber) {
-            const number = lastSavedBill.billingData.contactNumber.replace(/\D/g, '');
-            const brandName = companyInfo?.brandName || "De Baker's & More"; //
+            let messageTemplate = "";
+            if (msgSnap.exists()) {
+                messageTemplate = msgSnap.data().template;
+            }
 
-            // Professional Template
-            const message = `Hello ${lastSavedBill.billingData.customerName || 'Customer'},
+            // 2. Fallback if no template exists yet
+            if (!messageTemplate) {
+                messageTemplate = `Hello {name},\n\nThank you for choosing De Baker's & More!\n\nTotal Amount: ₹{total}\n\nView Invoice: {link}`;
+            }
 
-Thank you for choosing ${brandName}!
+            // 3. Prepare real data
+            const baseUrl = window.location.origin;
+            const shareLink = `${baseUrl}/view/invoice/${billId}`;
+            const customerName = lastSavedBill?.billingData?.customerName || 'Customer';
+            const totalAmount = lastSavedBill?.finalCalculatedTotal.toFixed(2);
 
-Total Amount: ₹${lastSavedBill.finalCalculatedTotal.toFixed(2)}
+            // 4. Replace placeholders
+            const finalMessage = messageTemplate
+                .replace(/{name}/g, customerName)
+                .replace(/{total}/g, totalAmount)
+                .replace(/{link}/g, shareLink);
 
-You can view and download your digital invoice here:
-${shareLink}
-
-We look forward to serving you again soon!`;
-
-            window.open(`https://wa.me/91${number}?text=${encodeURIComponent(message)}`, '_blank'); //
+            // 5. Open WhatsApp
+            if (lastSavedBill?.billingData?.contactNumber) {
+                const number = lastSavedBill.billingData.contactNumber.replace(/\D/g, '');
+                window.open(`https://wa.me/91${number}?text=${encodeURIComponent(finalMessage)}`, '_blank');
+            }
+        } catch (error) {
+            console.error("Error sending WhatsApp:", error);
+            setToast({ show: true, message: 'Failed to load WhatsApp template.', bg: 'danger' });
         }
     };
 

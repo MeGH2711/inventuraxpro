@@ -651,15 +651,15 @@ const Customers = () => {
                             }}
                         >
                             {/* Chat Bubble */}
+
                             <div
-                                className="bg-white p-3 rounded-3 shadow-sm position-relative shadow-sm"
+                                className="bg-white p-3 rounded-3 shadow-sm"
                                 style={{
-                                    maxWidth: '90%',
-                                    width: 'fit-content',
-                                    fontSize: '0.92rem',
-                                    lineHeight: '1.4',
-                                    color: '#111b21',
-                                    borderRadius: '0 15px 15px 15px'
+                                    maxWidth: '100%',
+                                    borderRadius: '0 15px 15px 15px',
+                                    fontSize: '0.85rem',
+                                    overflowWrap: 'break-word',
+                                    wordBreak: 'break-word'
                                 }}
                             >
                                 {/* The actual formatted text */}
