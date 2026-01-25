@@ -268,13 +268,14 @@ const BillLogs = () => {
                                 <th>Date & Time</th>
                                 <th>Customer</th>
                                 <th>Payment</th>
+                                <th>Delivery</th>
                                 <th>Amount</th>
                                 <th className="text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan="6" className="text-center py-5"><Spinner animation="border" variant="primary" /></td></tr>
+                                <tr><td colSpan="7" className="text-center py-5"><Spinner animation="border" variant="primary" /></td></tr>
                             ) : filteredBills.length > 0 ? (
                                 filteredBills.map((bill) => (
                                     <tr key={bill.id}>
@@ -288,8 +289,21 @@ const BillLogs = () => {
                                             <div className="text-muted small">{bill.customerNumber}</div>
                                         </td>
                                         <td><Badge bg={bill.modeOfPayment === 'Cash' ? 'success' : 'info'} pill>{bill.modeOfPayment}</Badge></td>
+
+                                        {/* Added Delivery Mode Cell */}
+                                        <td>
+                                            <Badge
+                                                bg={bill.modeOfDelivery === 'Store Pickup' ? 'secondary' : 'warning'}
+                                                text={bill.modeOfDelivery === 'Home Delivery' ? 'dark' : 'white'}
+                                                pill
+                                            >
+                                                {bill.modeOfDelivery || 'N/A'}
+                                            </Badge>
+                                        </td>
+
                                         <td className="fw-bold text-dark">₹{bill.finalTotal?.toFixed(2)}</td>
                                         <td className="text-center">
+                                            {/* ... existing buttons ... */}
                                             <Button
                                                 variant="outline-primary"
                                                 size="sm"
@@ -299,7 +313,6 @@ const BillLogs = () => {
                                                 <MdVisibility />
                                             </Button>
 
-                                            {/* WhatsApp Button */}
                                             <Button
                                                 variant="outline-success"
                                                 size="sm"
@@ -332,7 +345,7 @@ const BillLogs = () => {
                                     </tr>
                                 ))
                             ) : (
-                                <tr><td colSpan="6" className="text-center py-5 text-muted">No records found matching your filters.</td></tr>
+                                <tr><td colSpan="7" className="text-center py-5 text-muted">No records found matching your filters.</td></tr>
                             )}
                         </tbody>
                     </Table>

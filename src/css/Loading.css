@@ -13,6 +13,10 @@
     backdrop-filter: blur(4px);
 }
 
+[data-theme='dark'] .loading-overlay {
+    background: rgba(11, 17, 22, 0.85);
+}
+
 .custom-spinner {
     width: 50px;
     height: 50px;
@@ -22,12 +26,21 @@
     animation: spin 1s linear infinite;
 }
 
+[data-theme='dark'] .custom-spinner {
+    border: 5px solid rgba(255, 255, 255, 0.1);
+    border-top: 5px solid var(--mainThemeColor);
+}
+
 .loading-text {
     margin-top: 15px;
     font-family: 'Montserrat', sans-serif;
     font-weight: 600;
     color: var(--mainThemeColor);
     letter-spacing: 1px;
+}
+
+[data-theme='dark'] .loading-text {
+    color: var(--textColor);
 }
 
 @keyframes spin {

@@ -498,7 +498,7 @@ const Billing = () => {
                 </Col>
 
                 <Col lg={8}>
-                    <Card className="border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+                    <Card className={`shadow-sm rounded-4 mb-4 overflow-hidden ${isDarkMode ? 'border-1 border-light' : 'border-0'}`}>
                         <Card.Header className={`border-0 pt-4 px-4 position-relative ${isDarkMode ? 'bg-dark' : 'bg-white'}`}>
                             <div className="input-group" ref={suggestionRef}>
                                 <span className={`input-group-text border-0 ${isDarkMode ? 'bg-dark text-light' : 'bg-light'}`}>
@@ -538,35 +538,59 @@ const Billing = () => {
                             </div>
                         </Card.Header>
                         <Card.Body className="p-0">
-                            <Table responsive bordered hover className={`mb-0 align-middle text-center ${isDarkMode ? 'table-dark border-secondary' : ''}`}>
+                            {/* Added 'border-bottom-0' to the Table to remove the outer bottom stroke */}
+                            <Table
+                                responsive
+                                hover
+                                className={`mb-0 align-middle text-center billing-table border-bottom-0 ${isDarkMode ? 'table-dark' : ''}`}
+                                style={{ borderCollapse: 'collapse' }}
+                            >
                                 <thead className={`${isDarkMode ? 'bg-dark text-light' : 'bg-light text-muted'} small uppercase`}>
-                                    <tr><th>Product Name</th><th style={{ width: '100px' }}>Qty</th><th>Price</th><th>Total</th><th style={{ width: '100px' }}>Disc %</th><th>Final</th><th className="text-center">Action</th></tr>
+                                    <tr className='border-secondary'>
+                                        <th className="border-start-0">Product Name</th>
+                                        <th>Qty</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                        <th style={{ width: '100px' }}>Disc %</th>
+                                        <th>Final</th>
+                                        <th className="text-center border-end-0">Action</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     {cart.map((item, index) => (
-                                        <tr key={item.tempId}>
-                                            <td className="ps-4 text-start fw-bold">{item.name}</td>
-                                            <td><Form.Control size="sm" type="number" value={item.qty} onChange={(e) => updateItemProperty(index, 'qty', e.target.value)} className="text-center" /></td>
-                                            <td>{item.price.toFixed(2)}</td>
-                                            <td>{item.total.toFixed(2)}</td>
-                                            <td><Form.Control size="sm" type="number" value={item.discount} onChange={(e) => updateItemProperty(index, 'discount', e.target.value)} className="text-center" /></td>
-                                            <td className="fw-bold">{item.discountedTotal.toFixed(2)}</td>
-                                            <td className="text-center"><Button variant="link" className="text-danger p-0" onClick={() => setCart(cart.filter(c => c.tempId !== item.tempId))}><MdDelete size={18} /></Button></td>
+                                        <tr className='border-secondary' key={item.tempId}>
+                                            <td className="ps-4 text-start fw-bold border-start-0">{item.name}</td>
+                                            <td className="border-start border-end">
+                                                <Form.Control size="sm" type="number" value={item.qty} onChange={(e) => updateItemProperty(index, 'qty', e.target.value)} className="text-center" />
+                                            </td>
+                                            <td className="border-start border-end">{item.price.toFixed(2)}</td>
+                                            <td className="border-start border-end">{item.total.toFixed(2)}</td>
+                                            <td className="border-start border-end">
+                                                <Form.Control size="sm" type="number" value={item.discount} onChange={(e) => updateItemProperty(index, 'discount', e.target.value)} className="text-center" />
+                                            </td>
+                                            <td className="fw-bold border-start border-end">{item.discountedTotal.toFixed(2)}</td>
+                                            <td className="text-center border-end-0">
+                                                <Button variant="link" className="text-danger p-0" onClick={() => setCart(cart.filter(c => c.tempId !== item.tempId))}>
+                                                    <MdDelete size={18} />
+                                                </Button>
+                                            </td>
                                         </tr>
                                     ))}
                                     {cart.length === 0 && (
-                                        <tr><td colSpan="7" className="text-center py-5 text-muted">Cart is empty. Search products above.</td></tr>
+                                        <tr className='border-secondary'>
+                                            <td colSpan="7" className="text-center py-5 text-muted border-0">Cart is empty. Search products above.</td>
+                                        </tr>
                                     )}
                                 </tbody>
-                                <tfoot className="fw-bold bg-light">
-                                    <tr>
-                                        <td colSpan="5" className="text-end py-2">Subtotal</td>
-                                        <td className="py-2">{subTotal.toFixed(2)}</td>
-                                        <td></td>
+                                <tfoot className="fw-bold bg-light border-secondary">
+                                    <tr className="border-top">
+                                        <td colSpan="5" className="text-end py-2 border-start-0">Subtotal</td>
+                                        <td className="py-2 border-start border-end">{subTotal.toFixed(2)}</td>
+                                        <td className="border-end-0"></td>
                                     </tr>
-                                    <tr>
-                                        <td colSpan="5" className="text-end py-2">Overall Discount (%)</td>
-                                        <td>
+                                    <tr className="border-secondary">
+                                        <td colSpan="5" className="text-end py-2 border-start-0">Overall Discount (%)</td>
+                                        <td className="border-start border-end">
                                             <Form.Control
                                                 size="sm"
                                                 type="number"
@@ -575,11 +599,12 @@ const Billing = () => {
                                                 onChange={(e) => setOverallDiscount(parseFloat(e.target.value) || 0)}
                                             />
                                         </td>
-                                        <td></td>
+                                        <td className="border-end-0"></td>
                                     </tr>
-                                    <tr>
-                                        <td colSpan="5" className="text-end py-2 text-primary fs-5">Grand Total</td>
-                                        <td className="py-2">
+                                    {/* Added 'border-bottom-0' to the final row and its cells */}
+                                    <tr className="border-bottom-0 border-secondary">
+                                        <td colSpan="5" className="text-end py-2 text-primary fs-5 border-start-0 border-bottom-0">Grand Total</td>
+                                        <td className="py-2 border-start border-end border-bottom-0">
                                             <Form.Control
                                                 size="sm"
                                                 type="number"
@@ -589,7 +614,7 @@ const Billing = () => {
                                                 style={{ border: '1px solid #0d6efd', background: '#f0f7ff' }}
                                             />
                                         </td>
-                                        <td></td>
+                                        <td className="border-end-0 border-bottom-0"></td>
                                     </tr>
                                 </tfoot>
                             </Table>

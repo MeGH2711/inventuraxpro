@@ -326,3 +326,48 @@ body {
   background-color: var(--mainThemeColor) !important;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* Modal Dark Theme Enhancements */
+[data-theme='dark'] .modal-content {
+  background-color: var(--cardBg);
+  color: var(--textColor);
+  border: 1px solid var(--tableBorder);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='dark'] .modal-header {
+  border-bottom: 1px solid var(--tableBorder);
+}
+
+[data-theme='dark'] .modal-footer {
+  border-top: 1px solid var(--tableBorder);
+}
+
+/* Modal Button Customization */
+[data-theme='dark'] .modal-body .btn-outline-dark {
+  color: #f8f9fa !important;
+  border-color: #495057 !important;
+  background-color: transparent !important;
+}
+
+[data-theme='dark'] .modal-body .btn-outline-dark:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: #f8f9fa !important;
+}
+
+/* Customize the WhatsApp Button in Dark Mode */
+[data-theme='dark'] .modal-body .btn-success {
+  background-color: #198754 !important;
+  /* Keep green but slightly desaturated if preferred */
+  border-color: #198754 !important;
+}
+
+/* Secondary text inside modal */
+[data-theme='dark'] .modal-body .text-muted {
+  color: #a0aab4 !important;
+}
+
+/* Invoice specific warning text */
+[data-theme='dark'] .modal-body .text-danger {
+  color: #ff6b6b !important;
+}
