@@ -1,11 +1,20 @@
+// React
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+
+// Bootstrap
 import { Container, Row, Col, Card, Form, Spinner, Button, InputGroup, Table } from 'react-bootstrap';
+
+// Charts
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Sector, Legend, BarChart, Bar
 } from 'recharts';
+
+// Firebase
 import { db } from '../firebaseConfig';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+
+// Icons
 import {
     MdTimeline, MdTrendingUp, MdEvent, MdFunctions, MdClear,
     MdDateRange, MdAnalytics, MdPieChart, MdLayers, MdBarChart,
@@ -13,7 +22,7 @@ import {
 } from 'react-icons/md';
 import { BiSolidCategory } from "react-icons/bi";
 
-// --- Global Constants & Static Helpers ---
+// Global Constants & Static Helpers
 const COLORS = ['#0d6efd', '#198754', '#ffc107', '#fd7e14', '#dc3545', '#6610f2', '#6f42c1'];
 
 const formatDateLabel = (dateObj) => {
@@ -364,10 +373,14 @@ const Analytics = () => {
     // --- 6. RENDER HELPERS ---
     const renderActiveShape = (props) => {
         const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value } = props;
+        const isDark = document.body.getAttribute('data-theme') === 'dark';
+        const textColor = isDark ? '#f8f9fa' : '#333';
+        const subTextColor = isDark ? '#a0aab4' : '#6c757d';
+
         return (
             <g>
-                <text x={cx} y={cy - 10} dy={8} textAnchor="middle" fill="#333" style={{ fontSize: '16px', fontWeight: 'bold' }}>{payload.name}</text>
-                <text x={cx} y={cy + 15} dy={8} textAnchor="middle" fill="#6c757d" style={{ fontSize: '14px' }}>{`${value} Products`}</text>
+                <text x={cx} y={cy - 10} dy={8} textAnchor="middle" fill={textColor} style={{ fontSize: '16px', fontWeight: 'bold' }}>{payload.name}</text>
+                <text x={cx} y={cy + 15} dy={8} textAnchor="middle" fill={subTextColor} style={{ fontSize: '14px' }}>{`${value} Products`}</text>
                 <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 10} startAngle={startAngle} endAngle={endAngle} fill={fill} />
                 <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 12} outerRadius={outerRadius + 15} fill={fill} />
             </g>
@@ -444,6 +457,10 @@ const Analytics = () => {
         return null;
     };
 
+    const isDark = document.body.getAttribute('data-theme') === 'dark';
+    const axisColor = isDark ? '#a0aab4' : '#6c757d';
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : '#bababa';
+
     return (
         <Container fluid className="py-4">
             <div className="mb-4">
@@ -507,9 +524,9 @@ const Analytics = () => {
                                 <div style={{ width: '100%', height: '420px' }}>
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={chartData}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#bababa" />
-                                            <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6c757d' }} axisLine={false} tickLine={false} />
-                                            <YAxis tick={{ fontSize: 11, fill: '#6c757d' }} tickFormatter={(v) => `₹${v.toLocaleString()}`} axisLine={false} tickLine={false} />
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                                            <XAxis dataKey="name" tick={{ fontSize: 11, fill: axisColor }} axisLine={false} tickLine={false} />
+                                            <YAxis tick={{ fontSize: 11, fill: axisColor }} tickFormatter={(v) => `₹${v.toLocaleString()}`} axisLine={false} tickLine={false} />
                                             <RechartsTooltip
                                                 content={<CustomRevenueTooltip />}
                                                 cursor={{ stroke: '#0d6efd', strokeWidth: 1, strokeDasharray: '4 4' }}

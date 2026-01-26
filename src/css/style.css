@@ -269,14 +269,11 @@ body {
 [data-theme='dark'] .table-hover tbody tr:hover th {
   background-color: var(--tableHoverBg) !important;
   color: var(--textColor) !important;
-  /* Forces text to stay light */
   transition: background-color 0.2s ease;
 }
 
-/* Fix for the Bill Number (#1) specifically if it changes color */
 [data-theme='dark'] .table-hover tbody tr:hover .text-primary {
   color: #4dabff !important;
-  /* A lighter blue for better contrast on hover */
 }
 
 /* Billing */
@@ -358,7 +355,6 @@ body {
 /* Customize the WhatsApp Button in Dark Mode */
 [data-theme='dark'] .modal-body .btn-success {
   background-color: #198754 !important;
-  /* Keep green but slightly desaturated if preferred */
   border-color: #198754 !important;
 }
 
@@ -370,4 +366,42 @@ body {
 /* Invoice specific warning text */
 [data-theme='dark'] .modal-body .text-danger {
   color: #ff6b6b !important;
+}
+
+[data-theme='dark'] .btn-outline-dark {
+  color: #f8f9fa !important;
+  border-color: #f8f9fa !important;
+}
+
+[data-theme='dark'] .btn-outline-dark:hover {
+  background-color: #f8f9fa !important;
+  color: #000000 !important;
+}
+
+/* Analytics */
+
+/* Dark Mode Chart Tooltips */
+[data-theme='dark'] .custom-chart-tooltip {
+  background-color: var(--cardBg) !important;
+  border: 1px solid var(--tableBorder) !important;
+  color: var(--textColor) !important;
+}
+
+[data-theme='dark'] .custom-chart-tooltip .text-dark {
+  color: var(--textColor) !important;
+}
+
+/* Ensure chart grid lines aren't too bright */
+[data-theme='dark'] .recharts-cartesian-grid-horizontal line,
+[data-theme='dark'] .recharts-cartesian-grid-vertical line {
+  stroke: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme='dark'] .table thead.bg-light {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme='dark'] .table th {
+  color: var(--bs-secondary-color) !important;
+  border-bottom: 1px solid var(--tableBorder) !important;
 }

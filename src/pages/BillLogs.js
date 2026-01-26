@@ -1,12 +1,21 @@
+// React
 import React, { useState, useEffect } from 'react';
+
+// Bootstrap
 import { Container, Row, Col, Card, Table, Button, InputGroup, Form, Badge, Spinner } from 'react-bootstrap';
+
+// Icons
 import {
     MdSearch, MdVisibility, MdPrint,
     MdFilterList, MdClear, MdDeleteOutline
 } from 'react-icons/md';
 import { FaWhatsapp } from "react-icons/fa";
+
+// Firebase
 import { db } from '../firebaseConfig';
 import { collection, query, orderBy, getDocs, limit, doc, getDoc, deleteDoc } from 'firebase/firestore';
+
+// Bill Generation
 import { generateInvoice } from '../utils/generateInvoice';
 
 const BillLogs = () => {
@@ -193,12 +202,11 @@ const BillLogs = () => {
 
             {/* Filter Toolbar */}
             <Row className="g-3 mb-4 align-items-end">
-                {/* Primary Search - Occupies more space for visibility */}
                 <Col lg={4} md={12}>
                     <Form.Group>
                         <Form.Label className="small fw-bold text-muted text-uppercase">Search Records</Form.Label>
-                        <InputGroup>
-                            <InputGroup.Text className="bg-white border-end-0 text-muted">
+                        <InputGroup className="shadow-sm">
+                            <InputGroup.Text className="border-end-0 text-muted">
                                 <MdSearch size={20} />
                             </InputGroup.Text>
                             <Form.Control
@@ -211,7 +219,6 @@ const BillLogs = () => {
                     </Form.Group>
                 </Col>
 
-                {/* Payment Method Dropdown */}
                 <Col lg={2} md={4}>
                     <Form.Group>
                         <Form.Label className="small fw-bold text-muted text-uppercase">Payment</Form.Label>
@@ -227,18 +234,17 @@ const BillLogs = () => {
                     </Form.Group>
                 </Col>
 
-                {/* Date Range - Grouped Together */}
                 <Col lg={4} md={8}>
                     <Form.Group>
                         <Form.Label className="small fw-bold text-muted text-uppercase">Date Range</Form.Label>
-                        <InputGroup>
+                        <InputGroup className="shadow-sm">
                             <Form.Control
                                 type="date"
                                 className="shadow-none border-end-0 py-2"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
                             />
-                            <InputGroup.Text className="bg-white border-start-0 border-end-0 text-muted px-2">
+                            <InputGroup.Text className="border-start-0 border-end-0 text-muted px-2">
                                 to
                             </InputGroup.Text>
                             <Form.Control
@@ -251,9 +257,9 @@ const BillLogs = () => {
                     </Form.Group>
                 </Col>
 
-                {/* Result Counter */}
                 <Col lg={2} md={12} className="text-lg-end text-center pb-2">
-                    <div className="bg-light px-3 py-2 d-flex justify-content-center align-items-center rounded-pill text-muted small fw-bold border">
+                    {/* Replaced bg-light with a custom border class for dark mode consistency */}
+                    <div className="px-3 py-2 d-flex justify-content-center align-items-center rounded-pill text-muted small fw-bold border border-secondary-subtle">
                         <MdFilterList className="me-1" /> {filteredBills.length} Results Found
                     </div>
                 </Col>
@@ -262,7 +268,7 @@ const BillLogs = () => {
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
                 <Card.Body className="p-0">
                     <Table responsive hover className="mb-0 align-middle">
-                        <thead className="bg-light text-uppercase small" style={{ letterSpacing: '0.5px' }}>
+                        <thead className="text-uppercase small" style={{ letterSpacing: '0.5px' }}>
                             <tr>
                                 <th className="ps-4">Bill No</th>
                                 <th>Date & Time</th>
@@ -282,28 +288,28 @@ const BillLogs = () => {
                                         <td className="ps-4 fw-bold text-primary">#{bill.billNumber}</td>
                                         <td>
                                             <div className="small fw-bold">{formatDate(bill.billingDate)}</div>
-                                            <div className="text-muted extra-small" style={{ fontSize: '0.75rem' }}>{formatTime(bill.billingTime)}</div>
+                                            <div className="text-muted" style={{ fontSize: '0.75rem' }}>{formatTime(bill.billingTime)}</div>
                                         </td>
                                         <td>
-                                            <div className="fw-bold text-dark">{bill.customerName}</div>
+                                            <div className="fw-bold">{bill.customerName}</div>
                                             <div className="text-muted small">{bill.customerNumber}</div>
                                         </td>
-                                        <td><Badge bg={bill.modeOfPayment === 'Cash' ? 'success' : 'info'} pill>{bill.modeOfPayment}</Badge></td>
-
-                                        {/* Added Delivery Mode Cell */}
+                                        <td>
+                                            <Badge bg={bill.modeOfPayment === 'Cash' ? 'success' : 'info'} pill>
+                                                {bill.modeOfPayment}
+                                            </Badge>
+                                        </td>
                                         <td>
                                             <Badge
                                                 bg={bill.modeOfDelivery === 'Store Pickup' ? 'secondary' : 'warning'}
-                                                text={bill.modeOfDelivery === 'Home Delivery' ? 'dark' : 'white'}
+                                                className={bill.modeOfDelivery === 'Home Delivery' ? 'text-dark' : ''}
                                                 pill
                                             >
                                                 {bill.modeOfDelivery || 'N/A'}
                                             </Badge>
                                         </td>
-
-                                        <td className="fw-bold text-dark">₹{bill.finalTotal?.toFixed(2)}</td>
+                                        <td className="fw-bold">₹{bill.finalTotal?.toFixed(2)}</td>
                                         <td className="text-center">
-                                            {/* ... existing buttons ... */}
                                             <Button
                                                 variant="outline-primary"
                                                 size="sm"
@@ -326,7 +332,7 @@ const BillLogs = () => {
                                             <Button
                                                 variant="outline-dark"
                                                 size="sm"
-                                                className="me-2"
+                                                className="me-2 dark-mode-outline-fix"
                                                 onClick={() => handlePrint(bill)}
                                                 disabled={bill.customerName?.toLowerCase() === "walking customer"}
                                             >

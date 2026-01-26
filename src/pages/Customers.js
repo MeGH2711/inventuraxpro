@@ -248,19 +248,18 @@ const Customers = () => {
 
             {/* Main Table Card */}
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
-                <Card.Header className="bg-white border-0 py-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <Card.Header className="bg-white border-bottom py-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                    {/* Search & Sort Group */}
                     <div className="d-flex gap-2 w-100" style={{ maxWidth: '500px' }}>
-                        {/* Redesigned Search Bar */}
-                        <InputGroup
-                            style={{ transition: 'all 0.3s ease' }}
-                            className="bg-white border rounded-pill px-2 shadow-sm flex-grow-1"
-                        >
+
+                        {/* Simplified Search Bar */}
+                        <InputGroup className="bg-light border rounded-3 flex-grow-1 overflow-hidden">
                             <InputGroup.Text className="bg-transparent border-0 pe-1">
-                                <MdSearch size={18} className="text-primary" />
+                                <MdSearch size={18} className="text-muted" />
                             </InputGroup.Text>
                             <Form.Control
-                                placeholder="Search..."
-                                className="bg-transparent border-0 shadow-none py-1"
+                                placeholder="Search name or mobile..."
+                                className="bg-transparent border-0 shadow-none py-2"
                                 style={{ fontSize: '0.85rem' }}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -268,25 +267,30 @@ const Customers = () => {
                             {searchTerm && (
                                 <Button
                                     variant="link"
-                                    className="text-muted p-0 pe-2 border-0 text-decoration-none d-flex align-items-center"
+                                    className="text-muted text-decoration-none border-0 pe-2"
                                     onClick={() => setSearchTerm('')}
                                 >
-                                    <span style={{ fontSize: '0.75rem', fontWeight: '600' }}>CLEAR</span>
+                                    <small style={{ fontSize: '0.7rem', fontWeight: '700' }}>CLEAR</small>
                                 </Button>
                             )}
                         </InputGroup>
 
-                        {/* Sort Dropdown */}
+                        {/* Simplified Sort Dropdown */}
                         <Dropdown onSelect={(e) => setSortBy(e)}>
-                            <Dropdown.Toggle variant="light" className="rounded-pill border shadow-sm d-flex align-items-center smallest fw-bold text-uppercase px-3 py-2">
-                                <MdSort size={18} className="me-2 text-primary" />
-                                {sortBy === 'spent' && 'Highest Spent'}
-                                {sortBy === 'visits' && 'Most Visits'}
-                                {sortBy === 'recent' && 'Recently Seen'}
-                                {sortBy === 'alpha' && 'Name (A-Z)'}
+                            <Dropdown.Toggle
+                                variant="white"
+                                className="border rounded-3 d-flex align-items-center smallest fw-bold text-uppercase px-3 py-2 shadow-none"
+                            >
+                                <MdSort size={18} className="me-2 text-muted" />
+                                <span className="text-dark">
+                                    {sortBy === 'spent' && 'Revenue'}
+                                    {sortBy === 'visits' && 'Visits'}
+                                    {sortBy === 'recent' && 'Recent'}
+                                    {sortBy === 'alpha' && 'A-Z'}
+                                </span>
                             </Dropdown.Toggle>
 
-                            <Dropdown.Menu className="border-0 shadow rounded-3">
+                            <Dropdown.Menu className="border shadow-sm rounded-3 mt-1">
                                 <Dropdown.Item eventKey="spent" className="smallest py-2">HIGHEST SPENDING</Dropdown.Item>
                                 <Dropdown.Item eventKey="visits" className="smallest py-2">MOST VISITS</Dropdown.Item>
                                 <Dropdown.Item eventKey="recent" className="smallest py-2">RECENTLY SEEN</Dropdown.Item>
@@ -295,10 +299,11 @@ const Customers = () => {
                         </Dropdown>
                     </div>
 
+                    {/* Simple Record Count */}
                     <div className="d-none d-md-block">
-                        <Badge bg="primary-subtle" text="primary" className="rounded-pill px-3 py-2">
-                            Showing {processedCustomers.length} Records
-                        </Badge>
+                        <span className="text-muted smallest fw-bold text-uppercase tracking-wider">
+                            {processedCustomers.length} Customers Found
+                        </span>
                     </div>
                 </Card.Header>
 

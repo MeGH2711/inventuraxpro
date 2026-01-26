@@ -89,7 +89,6 @@ const PublicBill = () => {
 
     const formatTime = (timeString) => {
         if (!timeString) return "";
-        // Creates a dummy date to use the localization formatter
         const [hours, minutes] = timeString.split(':');
         const date = new Date();
         date.setHours(parseInt(hours), parseInt(minutes));
@@ -102,7 +101,18 @@ const PublicBill = () => {
     };
 
     return (
-        <div className="min-vh-100" style={{ backgroundColor: '#F8F9FA', paddingBottom: '80px' }}>
+        /* Forced Light Mode Wrapper: 
+           Overrides the global data-theme attributes and body background color. */
+        <div
+            data-theme="light"
+            data-bs-theme="light"
+            className="min-vh-100"
+            style={{
+                backgroundColor: '#F8F9FA',
+                color: '#212529',
+                paddingBottom: '80px'
+            }}
+        >
             {/* Desktop Navbar */}
             <nav className="navbar navbar-light bg-white border-bottom sticky-top py-3 d-none d-md-block">
                 <Container>
@@ -112,7 +122,7 @@ const PublicBill = () => {
                                 <MdReceipt size={24} />
                             </div>
                             <div>
-                                <h6 className="mb-0 fw-bold">Invoice #{bill.billNumber}</h6>
+                                <h6 className="mb-0 fw-bold text-dark">Invoice #{bill.billNumber}</h6>
                                 <small className="text-muted">{company?.brandName || "Merchant"}</small>
                             </div>
                         </div>
@@ -131,11 +141,11 @@ const PublicBill = () => {
                             <Badge bg="soft-success" className="text-success px-3 py-2 border border-success border-opacity-25" style={{ backgroundColor: '#e6f4ea' }}>
                                 <MdCheckCircle className="me-1" /> Payment Verified
                             </Badge>
-                            <h2 className="fw-bold mt-2">Order Summary</h2>
+                            <h2 className="fw-bold mt-2 text-dark">Order Summary</h2>
                         </div>
 
                         {/* Order Detail Table Card */}
-                        <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                        <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
                             <Card.Header className="bg-white py-3 border-light">
                                 <h6 className="mb-0 fw-bold text-muted small text-uppercase tracking-wider">Items</h6>
                             </Card.Header>
@@ -145,33 +155,34 @@ const PublicBill = () => {
                                 <Table responsive hover className="mb-0 align-middle">
                                     <thead className="bg-light small text-uppercase text-muted">
                                         <tr>
-                                            <th className="ps-4">Product Name</th>
-                                            <th className="text-center">Qty</th>
-                                            <th className="text-end">Price</th>
-                                            <th className="text-end">Total</th>
-                                            <th className="text-center">Disc%</th>
-                                            <th className="text-end pe-4">Final</th>
+                                            <th className="bg-white text-dark ps-4 border-0">Product Name</th>
+                                            <th className="bg-white text-dark text-center border-0">Qty</th>
+                                            <th className="bg-white text-dark text-end border-0">Price</th>
+                                            <th className="bg-white text-dark text-end border-0">Total</th>
+                                            <th className="bg-white text-dark text-center border-0">Disc%</th>
+                                            <th className="bg-white text-dark text-end pe-4 border-0">Final</th>
                                         </tr>
                                     </thead>
                                     <tbody className="border-top-0">
                                         {bill.products.map((p, i) => (
-                                            <tr key={i}>
-                                                <td className="ps-4 fw-bold text-dark">{p.name}</td>
-                                                <td className="text-center">{p.quantity}</td>
-                                                <td className="text-end text-muted">₹{p.unitPrice.toFixed(2)}</td>
-                                                <td className="text-end text-muted">₹{(p.quantity * p.unitPrice).toFixed(2)}</td>
-                                                <td className="text-center"><Badge bg="light" text="dark" className="border">{p.discount}%</Badge></td>
-                                                <td className="text-end fw-bold pe-4">₹{p.discountedTotal.toFixed(2)}</td>
+                                            <tr key={i} className="bg-white">
+                                                <td className="ps-4 fw-bold text-dark border-light">{p.name}</td>
+                                                <td className="text-center text-dark border-light">{p.quantity}</td>
+                                                <td className="text-end text-muted border-light">₹{p.unitPrice.toFixed(2)}</td>
+                                                <td className="text-end text-muted border-light">₹{(p.quantity * p.unitPrice).toFixed(2)}</td>
+                                                <td className="text-center border-light">
+                                                    <Badge bg="light" text="dark" className="border">{p.discount}%</Badge>
+                                                </td>
+                                                <td className="text-end fw-bold pe-4 text-dark border-light">₹{p.discountedTotal.toFixed(2)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </Table>
                             </div>
 
-                            {/* Mobile View List (Redesigned) */}
-                            <div className="d-md-none">
+                            {/* Mobile View List */}
+                            <div className="d-md-none bg-white">
                                 {bill.products.map((p, i) => {
-                                    // Calculate if there is a discount on this specific item
                                     const originalPrice = p.quantity * p.unitPrice;
                                     const hasDiscount = p.discount > 0;
 
@@ -188,7 +199,6 @@ const PublicBill = () => {
                                                     <div className="fw-bold text-dark" style={{ fontSize: '1.1rem' }}>
                                                         ₹{p.discountedTotal.toFixed(2)}
                                                     </div>
-                                                    {/* Only show original price if a discount exists */}
                                                     {hasDiscount && (
                                                         <div className="text-muted small text-decoration-line-through">
                                                             ₹{originalPrice.toFixed(2)}
@@ -196,8 +206,6 @@ const PublicBill = () => {
                                                     )}
                                                 </div>
                                             </div>
-
-                                            {/* Conditional Discount Badge */}
                                             {hasDiscount && (
                                                 <div className="d-flex align-items-center mt-1">
                                                     <Badge bg="soft-success" className="text-success border border-success border-opacity-25" style={{ backgroundColor: '#e6f4ea', fontSize: '0.7rem' }}>
@@ -214,34 +222,34 @@ const PublicBill = () => {
                         {/* Customer & Payment Info */}
                         <Row className="g-3">
                             <Col md={6}>
-                                <Card className="border-0 shadow-sm rounded-4 h-100">
+                                <Card className="border-0 shadow-sm rounded-4 h-100 bg-white">
                                     <Card.Body>
                                         <div className="small text-uppercase fw-bold text-muted mb-3">Customer Info</div>
-                                        <h6 className="fw-bold mb-1">{bill.customerName}</h6>
+                                        <h6 className="fw-bold mb-1 text-dark">{bill.customerName}</h6>
                                         <div className="text-muted small">{bill.customerNumber}</div>
                                         <div className="text-muted small text-truncate mt-1">{bill.customerAddress}</div>
                                     </Card.Body>
                                 </Card>
                             </Col>
                             <Col md={6}>
-                                <Card className="border-0 shadow-sm rounded-4 h-100">
+                                <Card className="border-0 shadow-sm rounded-4 h-100 bg-white">
                                     <Card.Body>
                                         <div className="small text-uppercase fw-bold text-muted mb-3">Payment Info</div>
                                         <div className="d-flex justify-content-between small mb-1">
                                             <span className="text-muted">Payment Mode:</span>
-                                            <span className="fw-bold">{bill.modeOfPayment}</span>
+                                            <span className="fw-bold text-dark">{bill.modeOfPayment}</span>
                                         </div>
                                         <div className="d-flex justify-content-between small mb-1">
                                             <span className="text-muted">Delivery:</span>
-                                            <span className="fw-bold">{bill.modeOfDelivery}</span>
+                                            <span className="fw-bold text-dark">{bill.modeOfDelivery}</span>
                                         </div>
                                         <div className="d-flex justify-content-between small mb-1">
                                             <span className="text-muted">Time:</span>
-                                            <span className="fw-bold">{formatTime(bill.billingTime)}</span>
+                                            <span className="fw-bold text-dark">{formatTime(bill.billingTime)}</span>
                                         </div>
                                         <div className="d-flex justify-content-between small">
                                             <span className="text-muted">Date:</span>
-                                            <span className="fw-bold">{formatDate(bill.billingDate)}</span>
+                                            <span className="fw-bold text-dark">{formatDate(bill.billingDate)}</span>
                                         </div>
                                     </Card.Body>
                                 </Card>
@@ -255,24 +263,20 @@ const PublicBill = () => {
                             <Card className="border-0 shadow-lg rounded-4 bg-dark text-white overflow-hidden">
                                 <Card.Body className="p-4">
                                     <h5 className="mb-4 opacity-75">Final Settlement</h5>
-
                                     <div className="d-flex justify-content-between mb-2">
                                         <span className="opacity-50">Subtotal</span>
                                         <span>₹{bill.overallTotal.toFixed(2)}</span>
                                     </div>
-
                                     <div className="d-flex justify-content-between mb-4 text-info">
                                         <span className="opacity-75">Overall Discount ({bill.overallDiscount}%)</span>
                                         <span>- ₹{(bill.overallTotal - bill.finalTotal).toFixed(2)}</span>
                                     </div>
-
                                     <div className="p-3 rounded-3 bg-white bg-opacity-10 mb-3">
                                         <div className="d-flex justify-content-between align-items-end">
                                             <span className="small opacity-75">Amount Paid</span>
                                             <span className="h2 fw-bold mb-0 text-warning">₹{bill.finalTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                         </div>
                                     </div>
-
                                     <div className="text-center mt-4">
                                         <div className="small opacity-50 mb-1">Issued by {company?.brandName}</div>
                                         <div className="small opacity-50 d-flex justify-content-center align-items-center">
@@ -283,59 +287,42 @@ const PublicBill = () => {
                                 </Card.Body>
                             </Card>
 
-                            {/* Merchant Support Card */}
-                            {/* Redesigned Merchant & Social Card */}
                             <Card className="border-0 shadow-sm rounded-4 mt-3 bg-white overflow-hidden">
                                 <Card.Header className="bg-light border-0 py-3 text-center">
                                     <h6 className="mb-0 fw-bold text-muted small text-uppercase">Connect with Us</h6>
                                 </Card.Header>
                                 <Card.Body className="p-4">
-                                    {/* Support Section */}
                                     <div className="text-center mb-4">
                                         <div className="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-2" style={{ width: '40px', height: '40px' }}>
                                             <FaPhoneAlt size={18} />
                                         </div>
                                         <div className="small text-muted">Customer Support</div>
-                                        <h6 className="fw-bold">{company?.phone}</h6>
+                                        <h6 className="fw-bold text-dark">{company?.phone}</h6>
                                     </div>
 
-                                    {/* Clickable Social Grid */}
                                     <div className="d-flex justify-content-center gap-3 pt-3 border-top">
                                         {company?.website && (
                                             <a href={company.website} target="_blank" rel="noopener noreferrer"
-                                                className="btn rounded-circle d-flex align-items-center justify-content-center"
-                                                style={{ width: '45px', height: '45px', borderColor: '#1c1c1c', color: '#1c1c1c'  }} title="Website">
+                                                className="btn rounded-circle d-flex align-items-center justify-content-center border"
+                                                style={{ width: '45px', height: '45px', color: '#1c1c1c' }} title="Website">
                                                 <FaGlobe size={20} />
                                             </a>
                                         )}
-
                                         {company?.instagramLink && (
                                             <a href={company.instagramLink} target="_blank" rel="noopener noreferrer"
-                                                className="btn rounded-circle d-flex align-items-center justify-content-center"
-                                                style={{ width: '45px', height: '45px', borderColor: '#E1306C', color: '#E1306C' }} title="Instagram">
+                                                className="btn rounded-circle d-flex align-items-center justify-content-center border"
+                                                style={{ width: '45px', height: '45px', color: '#E1306C' }} title="Instagram">
                                                 <FaInstagram size={20} />
                                             </a>
                                         )}
-
                                         {company?.youtubeLink && (
                                             <a href={company.youtubeLink} target="_blank" rel="noopener noreferrer"
-                                                className="btn rounded-circle d-flex align-items-center justify-content-center"
-                                                style={{ width: '45px', height: '45px', borderColor: '#FF0000', color: '#FF0000' }} title="YouTube">
+                                                className="btn rounded-circle d-flex align-items-center justify-content-center border"
+                                                style={{ width: '45px', height: '45px', color: '#FF0000' }} title="YouTube">
                                                 <FaYoutube size={20} />
                                             </a>
                                         )}
                                     </div>
-
-                                    {/* Display Names beneath icons if they exist */}
-                                    {(company?.instagramName || company?.youtubeName) && (
-                                        <div className="text-center mt-3">
-                                            <small className="text-muted italic">
-                                                {company?.instagramName && `${company.instagramName}`}
-                                                {company?.instagramName && company?.youtubeName && ' • '}
-                                                {company?.youtubeName}
-                                            </small>
-                                        </div>
-                                    )}
                                 </Card.Body>
                             </Card>
                         </div>
