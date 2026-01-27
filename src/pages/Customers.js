@@ -282,7 +282,7 @@ const Customers = () => {
                                 className="border rounded-3 d-flex align-items-center smallest fw-bold text-uppercase px-3 py-2 shadow-none"
                             >
                                 <MdSort size={18} className="me-2 text-muted" />
-                                <span className="text-dark">
+                                <span>
                                     {sortBy === 'spent' && 'Revenue'}
                                     {sortBy === 'visits' && 'Visits'}
                                     {sortBy === 'recent' && 'Recent'}
@@ -335,7 +335,7 @@ const Customers = () => {
                                                         {customer.name.charAt(0)}
                                                     </div>
                                                     <div>
-                                                        <div className="fw-bold text-dark">{customer.name}</div>
+                                                        <div className="fw-bold">{customer.name}</div>
                                                         <div className="text-muted smallest">{customer.phone}</div>
                                                     </div>
                                                 </div>

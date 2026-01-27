@@ -189,7 +189,7 @@ body {
   background-color: var(--mainThemeColor);
 }
 
-/* LOGIN PAGE */
+/* Login Page */
 
 .login-wrapper {
   height: 100vh;
@@ -404,4 +404,88 @@ body {
 [data-theme='dark'] .table th {
   color: var(--bs-secondary-color) !important;
   border-bottom: 1px solid var(--tableBorder) !important;
+}
+
+/* Customer */
+
+/* Specific overrides for Customers Page in Dark Mode */
+[data-theme='dark'] .custom-table {
+  color: var(--textColor);
+  border-color: var(--tableBorder);
+}
+
+[data-theme='dark'] .bg-white {
+  background-color: var(--cardBg) !important;
+  color: var(--textColor) !important;
+}
+
+[data-theme='dark'] .bg-light {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme='dark'] .list-group-item {
+  background-color: var(--cardBg);
+  color: var(--textColor);
+  border-color: var(--tableBorder);
+}
+
+/* Offcanvas (Campaign Editor) Dark Mode */
+[data-theme='dark'] .offcanvas {
+  background-color: var(--cardBg);
+  color: var(--textColor);
+}
+
+[data-theme='dark'] .offcanvas-header {
+  border-bottom: 1px solid var(--tableBorder);
+}
+
+/* Fix for Search Input in Dark Mode */
+[data-theme='dark'] .form-control {
+  background-color: #1a2632 !important;
+  border-color: var(--tableBorder) !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .dropdown-menu {
+  background-color: var(--cardBg);
+  border: 1px solid var(--tableBorder);
+}
+
+[data-theme='dark'] .dropdown-item {
+  color: var(--textColor);
+}
+
+[data-theme='dark'] .dropdown-item:hover {
+  background-color: var(--tableHover);
+  color: #ffffff;
+}
+
+/* Update global text colors for Dark Mode headers */
+[data-theme='dark'] .text-dark {
+  color: var(--textColor) !important;
+}
+
+/* Fix for the Search Bar & Dropdowns */
+[data-theme='dark'] .form-control,
+[data-theme='dark'] .dropdown-toggle,
+[data-theme='dark'] .input-group-text {
+  background-color: #1a2632 !important;
+  border-color: var(--tableBorder) !important;
+  color: #ffffff !important;
+}
+
+/* Ensure Table Headers and Content are visible */
+[data-theme='dark'] .custom-table thead {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme='dark'] .custom-table td {
+  color: var(--textColor) !important;
+}
+
+/* Fix for those white mini-stats boxes */
+[data-theme='dark'] .stats-box {
+  background-color: var(--cardBg) !important;
+  color: var(--textColor) !important;
+  border: 1px solid var(--tableBorder) !important;
 }
