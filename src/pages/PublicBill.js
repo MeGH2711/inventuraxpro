@@ -101,18 +101,53 @@ const PublicBill = () => {
     };
 
     return (
-        /* Forced Light Mode Wrapper: 
-           Overrides the global data-theme attributes and body background color. */
         <div
             data-theme="light"
             data-bs-theme="light"
-            className="min-vh-100"
+            className="public-bill-container min-vh-100"
             style={{
                 backgroundColor: '#F8F9FA',
                 color: '#212529',
                 paddingBottom: '80px'
             }}
         >
+            {/* INTERNAL CSS OVERRIDES:
+              This ensures that even if ThemeContext.js sets [data-theme='dark'] on the body,
+              the public invoice remains clean and readable in light mode.
+            */}
+            <style>
+                {`
+                    body {
+                        background-color: #F8F9FA !important;
+                        color: #212529 !important;
+                    }
+
+                    .public-bill-container .card {
+                        background-color: #ffffff !important;
+                        color: #212529 !important;
+                        border: none !important;
+                    }
+
+                    .public-bill-container .text-muted {
+                        color: #6c757d !important;
+                    }
+
+                    .public-bill-container .table {
+                        --bs-table-bg: #ffffff !important;
+                        --bs-table-color: #212529 !important;
+                    }
+
+                    .public-bill-container .bg-light {
+                        background-color: #f8f9fa !important;
+                    }
+                    
+                    /* Ensures the Success badge colors remain visible */
+                    .public-bill-container .badge {
+                        opacity: 1 !important;
+                    }
+                `}
+            </style>
+
             {/* Desktop Navbar */}
             <nav className="navbar navbar-light bg-white border-bottom sticky-top py-3 d-none d-md-block">
                 <Container>
@@ -122,7 +157,7 @@ const PublicBill = () => {
                                 <MdReceipt size={24} />
                             </div>
                             <div>
-                                <h6 className="mb-0 fw-bold text-dark">Invoice #{bill.billNumber}</h6>
+                                <h6 className="mb-0 fw-bold">Invoice #{bill.billNumber}</h6>
                                 <small className="text-muted">{company?.brandName || "Merchant"}</small>
                             </div>
                         </div>
@@ -141,39 +176,39 @@ const PublicBill = () => {
                             <Badge bg="soft-success" className="text-success px-3 py-2 border border-success border-opacity-25" style={{ backgroundColor: '#e6f4ea' }}>
                                 <MdCheckCircle className="me-1" /> Payment Verified
                             </Badge>
-                            <h2 className="fw-bold mt-2 text-dark">Order Summary</h2>
+                            <h2 className="fw-bold mt-2">Order Summary</h2>
                         </div>
 
                         {/* Order Detail Table Card */}
                         <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
-                            <Card.Header className="bg-white py-3 border-light">
+                            <Card.Header className="py-3 border-light">
                                 <h6 className="mb-0 fw-bold text-muted small text-uppercase tracking-wider">Items</h6>
                             </Card.Header>
 
                             {/* Desktop View Table */}
                             <div className="d-none d-md-block">
-                                <Table responsive hover className="mb-0 align-middle">
-                                    <thead className="bg-light small text-uppercase text-muted">
+                                <Table responsive className="mb-0 align-middle">
+                                    <thead className="small text-uppercase text-muted">
                                         <tr>
-                                            <th className="bg-white text-dark ps-4 border-0">Product Name</th>
-                                            <th className="bg-white text-dark text-center border-0">Qty</th>
-                                            <th className="bg-white text-dark text-end border-0">Price</th>
-                                            <th className="bg-white text-dark text-end border-0">Total</th>
-                                            <th className="bg-white text-dark text-center border-0">Disc%</th>
-                                            <th className="bg-white text-dark text-end pe-4 border-0">Final</th>
+                                            <th className="ps-4 border-0">Product Name</th>
+                                            <th className="text-center border-0">Qty</th>
+                                            <th className="text-end border-0">Price</th>
+                                            <th className="text-end border-0">Total</th>
+                                            <th className="text-center border-0">Disc%</th>
+                                            <th className="text-end pe-4 border-0">Final</th>
                                         </tr>
                                     </thead>
                                     <tbody className="border-top-0">
                                         {bill.products.map((p, i) => (
                                             <tr key={i} className="bg-white">
-                                                <td className="ps-4 fw-bold text-dark border-light">{p.name}</td>
-                                                <td className="text-center text-dark border-light">{p.quantity}</td>
+                                                <td className="ps-4 fw-bold border-light">{p.name}</td>
+                                                <td className="text-center border-light">{p.quantity}</td>
                                                 <td className="text-end text-muted border-light">₹{p.unitPrice.toFixed(2)}</td>
                                                 <td className="text-end text-muted border-light">₹{(p.quantity * p.unitPrice).toFixed(2)}</td>
                                                 <td className="text-center border-light">
-                                                    <Badge bg="light" text="dark" className="border">{p.discount}%</Badge>
+                                                    <Badge bg="primary" className="border-0">{p.discount}%</Badge>
                                                 </td>
-                                                <td className="text-end fw-bold pe-4 text-dark border-light">₹{p.discountedTotal.toFixed(2)}</td>
+                                                <td className="text-end fw-bold pe-4 border-light">₹{p.discountedTotal.toFixed(2)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -181,7 +216,7 @@ const PublicBill = () => {
                             </div>
 
                             {/* Mobile View List */}
-                            <div className="d-md-none bg-white">
+                            <div className="d-md-none">
                                 {bill.products.map((p, i) => {
                                     const originalPrice = p.quantity * p.unitPrice;
                                     const hasDiscount = p.discount > 0;
@@ -190,13 +225,13 @@ const PublicBill = () => {
                                         <div key={i} className={`p-3 ${i !== bill.products.length - 1 ? 'border-bottom border-light' : ''}`}>
                                             <div className="d-flex justify-content-between align-items-start mb-2">
                                                 <div style={{ flex: 1 }}>
-                                                    <div className="fw-bold text-dark fs-6 mb-0">{p.name}</div>
+                                                    <div className="fw-bold fs-6 mb-0">{p.name}</div>
                                                     <div className="text-muted small">
                                                         {p.quantity} {p.quantity > 1 ? 'units' : 'unit'} × ₹{p.unitPrice.toFixed(2)}
                                                     </div>
                                                 </div>
                                                 <div className="text-end">
-                                                    <div className="fw-bold text-dark" style={{ fontSize: '1.1rem' }}>
+                                                    <div className="fw-bold" style={{ fontSize: '1.1rem' }}>
                                                         ₹{p.discountedTotal.toFixed(2)}
                                                     </div>
                                                     {hasDiscount && (
@@ -225,7 +260,7 @@ const PublicBill = () => {
                                 <Card className="border-0 shadow-sm rounded-4 h-100 bg-white">
                                     <Card.Body>
                                         <div className="small text-uppercase fw-bold text-muted mb-3">Customer Info</div>
-                                        <h6 className="fw-bold mb-1 text-dark">{bill.customerName}</h6>
+                                        <h6 className="fw-bold mb-1">{bill.customerName}</h6>
                                         <div className="text-muted small">{bill.customerNumber}</div>
                                         <div className="text-muted small text-truncate mt-1">{bill.customerAddress}</div>
                                     </Card.Body>
@@ -237,19 +272,19 @@ const PublicBill = () => {
                                         <div className="small text-uppercase fw-bold text-muted mb-3">Payment Info</div>
                                         <div className="d-flex justify-content-between small mb-1">
                                             <span className="text-muted">Payment Mode:</span>
-                                            <span className="fw-bold text-dark">{bill.modeOfPayment}</span>
+                                            <span className="fw-bold">{bill.modeOfPayment}</span>
                                         </div>
                                         <div className="d-flex justify-content-between small mb-1">
                                             <span className="text-muted">Delivery:</span>
-                                            <span className="fw-bold text-dark">{bill.modeOfDelivery}</span>
+                                            <span className="fw-bold">{bill.modeOfDelivery}</span>
                                         </div>
                                         <div className="d-flex justify-content-between small mb-1">
                                             <span className="text-muted">Time:</span>
-                                            <span className="fw-bold text-dark">{formatTime(bill.billingTime)}</span>
+                                            <span className="fw-bold">{formatTime(bill.billingTime)}</span>
                                         </div>
                                         <div className="d-flex justify-content-between small">
                                             <span className="text-muted">Date:</span>
-                                            <span className="fw-bold text-dark">{formatDate(bill.billingDate)}</span>
+                                            <span className="fw-bold">{formatDate(bill.billingDate)}</span>
                                         </div>
                                     </Card.Body>
                                 </Card>
@@ -259,7 +294,7 @@ const PublicBill = () => {
 
                     {/* Right Sidebar: Totals */}
                     <Col lg={4} className="mt-4 mt-lg-0">
-                        <div className="sticky-top" style={{ top: '100px' }}>
+                        <div>
                             <Card className="border-0 shadow-lg rounded-4 bg-dark text-white overflow-hidden">
                                 <Card.Body className="p-4">
                                     <h5 className="mb-4 opacity-75">Final Settlement</h5>
@@ -297,7 +332,7 @@ const PublicBill = () => {
                                             <FaPhoneAlt size={18} />
                                         </div>
                                         <div className="small text-muted">Customer Support</div>
-                                        <h6 className="fw-bold text-dark">{company?.phone}</h6>
+                                        <h6 className="fw-bold">{company?.phone}</h6>
                                     </div>
 
                                     <div className="d-flex justify-content-center gap-3 pt-3 border-top">
