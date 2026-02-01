@@ -349,6 +349,7 @@ body {
 
 [data-theme='dark'] .modal-body .btn-outline-dark:hover {
   background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f8f9fa !important;
   border-color: #f8f9fa !important;
 }
 

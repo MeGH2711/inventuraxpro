@@ -23,7 +23,7 @@ import { db } from '../firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const Settings = () => {
-    const { isDarkMode, toggleTheme } = useTheme();
+    const { theme, setTheme } = useTheme();
     const navigate = useNavigate();
 
     // State management
@@ -120,7 +120,7 @@ const Settings = () => {
                     <div key={i} style={{
                         borderLeft: '3px solid #30b489',
                         paddingLeft: '10px',
-                        color: '#555',
+                        opacity: 0.6,
                         margin: '5px 0',
                         fontStyle: 'italic'
                     }}>
@@ -178,19 +178,33 @@ const Settings = () => {
                         </Card.Body>
                     </Card>
 
-                    <Card className="border-0 shadow-sm rounded-4 mb-3 overflow-hidden d-none">
+                    <Card className="border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
                         <Card.Body className="p-4">
                             <div className="d-flex align-items-center justify-content-between">
                                 <div className="d-flex align-items-center gap-3">
                                     <div className="p-3 bg-light rounded-circle text-warning">
-                                        {isDarkMode ? <MdDarkMode size={24} /> : <MdLightMode size={24} />}
+                                        {/* Dynamic Icon based on selection */}
+                                        {theme === 'dark' && <MdDarkMode size={24} />}
+                                        {theme === 'light' && <MdLightMode size={24} />}
+                                        {theme === 'system' && <MdSecurity size={24} />}
                                     </div>
                                     <div>
                                         <h5 className="fw-bold mb-1">Appearance</h5>
-                                        <p className="text-muted small mb-0">Switch between light and dark mode.</p>
+                                        <p className="text-muted small mb-0">Customize how the application looks.</p>
                                     </div>
                                 </div>
-                                <Form.Check type="switch" id="theme-switch" checked={isDarkMode} onChange={toggleTheme} style={{ transform: 'scale(1.5)' }} />
+
+                                {/* New Dropdown Selection */}
+                                <Form.Select
+                                    value={theme}
+                                    onChange={(e) => setTheme(e.target.value)}
+                                    style={{ width: '150px' }}
+                                    className="rounded-3 text-center border-2"
+                                >
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                    <option value="system">System</option>
+                                </Form.Select>
                             </div>
                         </Card.Body>
                     </Card>

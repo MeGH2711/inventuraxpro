@@ -1001,6 +1001,9 @@ const Analytics = () => {
                         )}
                     </Card>
                 </Card.Body>
+                <Card.Footer className="bg-white py-2 px-4 border-top">
+                    <small className="text-muted float-end fst-italic">Last Updated: {lastUpdatedRevenue}</small>
+                </Card.Footer>
             </Card>
 
             {/* SECTION 5: PAYMENT MODE DISTRIBUTION */}
@@ -1175,7 +1178,7 @@ const InventoryStat = ({ title, value, subtitle, icon, color, isNumeric = true }
             <div className={`rounded-3 d-flex align-items-center justify-content-center bg-${color} bg-opacity-10 text-${color} flex-shrink-0`} style={{ width: '52px', height: '52px', fontSize: '1.4rem' }}>{icon}</div>
             <div className="ms-3 flex-grow-1">
                 <div className="text-secondary text-uppercase fw-bold" style={{ fontSize: '0.65rem', letterSpacing: '0.04em' }}>{title}</div>
-                <h4 className="fw-bold mb-3 me-2" style={{ color: '#1a1d23', lineHeight: '1.2' }}>{isNumeric ? value.toLocaleString() : value}</h4>
+                <h4 className="fw-bold mb-3 me-2" style={{ lineHeight: '1.2' }}>{isNumeric ? value.toLocaleString() : value}</h4>
                 <div className="text-muted" style={{ fontSize: '0.75rem', marginTop: '-2px' }}>{subtitle}</div>
             </div>
         </div>

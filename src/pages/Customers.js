@@ -100,7 +100,7 @@ const Customers = () => {
                     .replace(/~(.*?)~/g, '<del>$1</del>')
                     .replace(/```(.*?)```/g, '<code style="background:#d1d1d1; padding:0 4px; border-radius:3px; font-family:monospace">$1</code>')
                     .replace(/`(.*?)`/g, '<code style="background:#d1d1d1; padding:0 4px; border-radius:3px; font-family:monospace">$1</code>')
-                    .replace(/^> (.*)$/g, '<span style="border-left: 3px solid #30b489; padding-left: 10px; color: #555; display: block;">$1</span>')
+                    .replace(/^> (.*)$/g, '<span style="border-left: 3px solid #30b489; padding-left: 10px; opacity: 0.6; display: block;">$1</span>')
                     .replace(/^\* (.*)$/g, '• $1');
 
                 return <div key={i} dangerouslySetInnerHTML={{ __html: processedLine || '&nbsp;' }} />;
@@ -247,7 +247,7 @@ const Customers = () => {
             </div>
 
             {/* Main Table Card */}
-            <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
+            <Card className="border-0 shadow-sm rounded-4">
                 <Card.Header className="bg-white border-bottom py-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
                     {/* Search & Sort Group */}
                     <div className="d-flex gap-2 w-100" style={{ maxWidth: '500px' }}>
@@ -290,7 +290,7 @@ const Customers = () => {
                                 </span>
                             </Dropdown.Toggle>
 
-                            <Dropdown.Menu className="border shadow-sm rounded-3 mt-1">
+                            <Dropdown.Menu className="border shadow-sm rounded-3 mt-1" align="end" flip={true}>
                                 <Dropdown.Item eventKey="spent" className="smallest py-2">HIGHEST SPENDING</Dropdown.Item>
                                 <Dropdown.Item eventKey="visits" className="smallest py-2">MOST VISITS</Dropdown.Item>
                                 <Dropdown.Item eventKey="recent" className="smallest py-2">RECENTLY SEEN</Dropdown.Item>
@@ -569,7 +569,7 @@ const Customers = () => {
                                                 </Row>
                                             ) : (
                                                 /* TABLE VIEW */
-                                                <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
+                                                <Card className="border-0 shadow-sm rounded-4">
                                                     <Table responsive hover className="mb-0 align-middle">
                                                         <thead className="bg-white text-muted smallest text-uppercase fw-bold border-bottom">
                                                             <tr>
