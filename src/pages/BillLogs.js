@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 // Bootstrap
-import { Container, Row, Col, Card, Table, Button, InputGroup, Form, Badge, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, InputGroup, Form, Badge, Spinner, Modal } from 'react-bootstrap';
 
 // Icons
 import {
@@ -30,6 +30,10 @@ const BillLogs = () => {
     const [endDate, setEndDate] = useState('');
     const [absMinDate, setAbsMinDate] = useState('');
     const [absMaxDate, setAbsMaxDate] = useState('');
+
+    // Deletion Modal
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [billToDelete, setBillToDelete] = useState(null);
 
     useEffect(() => {
         const fetchBills = async () => {
@@ -112,6 +116,25 @@ const BillLogs = () => {
         generateInvoice(invoiceData, companyInfo);
     };
 
+    const confirmDelete = (bill) => {
+        setBillToDelete(bill);
+        setShowDeleteModal(true);
+    };
+
+    const executeDelete = async () => {
+        if (!billToDelete) return;
+
+        try {
+            await deleteDoc(doc(db, "bills", billToDelete.id));
+            setBills(prevBills => prevBills.filter(bill => bill.id !== billToDelete.id));
+            setShowDeleteModal(false);
+            setBillToDelete(null);
+        } catch (error) {
+            console.error("Error deleting bill:", error);
+            alert("Failed to delete the bill.");
+        }
+    };
+
     const openWhatsApp = async (bill) => {
         try {
             const msgRef = doc(db, "settings", "billWhatsappMessage");
@@ -135,25 +158,6 @@ const BillLogs = () => {
             }
         } catch (error) {
             console.error("WhatsApp error:", error);
-        }
-    };
-
-    const handleDelete = async (billId, billNumber) => {
-        const confirmDelete = window.confirm(`Are you sure you want to delete Bill #${billNumber}? This action cannot be undone.`);
-
-        if (confirmDelete) {
-            try {
-                // Delete from Firestore
-                await deleteDoc(doc(db, "bills", billId));
-
-                // Update local state to remove the bill from the list
-                setBills(prevBills => prevBills.filter(bill => bill.id !== billId));
-
-                alert(`Bill #${billNumber} deleted successfully.`);
-            } catch (error) {
-                console.error("Error deleting bill:", error);
-                alert("Failed to delete the bill. Please try again.");
-            }
         }
     };
 
@@ -342,7 +346,7 @@ const BillLogs = () => {
                                             <Button
                                                 variant="outline-danger"
                                                 size="sm"
-                                                onClick={() => handleDelete(bill.id, bill.billNumber)}
+                                                onClick={() => confirmDelete(bill)} // Changed this
                                                 title="Delete Bill"
                                             >
                                                 <MdDeleteOutline />
@@ -357,6 +361,44 @@ const BillLogs = () => {
                     </Table>
                 </Card.Body>
             </Card>
+            <Modal
+                show={showDeleteModal}
+                onHide={() => setShowDeleteModal(false)}
+                centered
+                contentClassName="border-0 shadow-lg rounded-4 overflow-hidden"
+            >
+                <Modal.Header closeButton className="border-bottom-0 pt-4 px-4">
+                    <Modal.Title className="fw-bold h5">Confirm Deletion</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="px-4 pb-4">
+                    <div className="d-flex align-items-center gap-3 mb-3 p-3 rounded-3 bg-danger bg-opacity-10 text-danger">
+                        <MdDeleteOutline size={30} />
+                        <div>
+                            <p className="mb-0 fw-bold">Are you sure?</p>
+                            <small className="opacity-75">This action is permanent and cannot be undone.</small>
+                        </div>
+                    </div>
+                    <p className="mb-0 text-muted">
+                        You are about to delete <strong>Bill #{billToDelete?.billNumber}</strong> for <strong>{billToDelete?.customerName}</strong>.
+                    </p>
+                </Modal.Body>
+                <Modal.Footer className="border-top-0 px-4 pb-4">
+                    <Button
+                        variant="link"
+                        className="text-decoration-none text-muted fw-bold me-auto p-0"
+                        onClick={() => setShowDeleteModal(false)}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="danger"
+                        className="px-4 rounded-pill fw-bold shadow-sm"
+                        onClick={executeDelete}
+                    >
+                        Delete Bill
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </Container>
     );
 };
