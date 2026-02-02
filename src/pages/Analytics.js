@@ -402,10 +402,19 @@ const Analytics = () => {
         const textColor = isDark ? '#f8f9fa' : '#333';
         const subTextColor = isDark ? '#a0aab4' : '#6c757d';
 
+        const isPaymentChart = ['UPI', 'Cash', 'Card', 'Unknown'].includes(payload.name) ||
+            paymentModeData.some(item => item.name === payload.name);
+
+        const unitLabel = isPaymentChart ? 'Bills' : 'Products';
+
         return (
             <g>
-                <text x={cx} y={cy - 10} dy={8} textAnchor="middle" fill={textColor} style={{ fontSize: '16px', fontWeight: 'bold' }}>{payload.name}</text>
-                <text x={cx} y={cy + 15} dy={8} textAnchor="middle" fill={subTextColor} style={{ fontSize: '14px' }}>{`${value} Products`}</text>
+                <text x={cx} y={cy - 10} dy={8} textAnchor="middle" fill={textColor} style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                    {payload.name}
+                </text>
+                <text x={cx} y={cy + 15} dy={8} textAnchor="middle" fill={subTextColor} style={{ fontSize: '14px' }}>
+                    {`${value} ${unitLabel}`}
+                </text>
                 <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 10} startAngle={startAngle} endAngle={endAngle} fill={fill} />
                 <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 12} outerRadius={outerRadius + 15} fill={fill} />
             </g>
@@ -485,6 +494,31 @@ const Analytics = () => {
     const isDark = document.body.getAttribute('data-theme') === 'dark';
     const axisColor = isDark ? '#a0aab4' : '#6c757d';
     const gridColor = isDark ? 'rgba(255,255,255,0.1)' : '#bababa';
+
+    // --- WEEKDAY PERFORMANCE STATE & LOGIC ---
+    const [weekdayMetric, setWeekdayMetric] = useState('sales'); // 'sales' or 'count'
+
+    const weekdayData = useMemo(() => {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const aggregation = days.map(day => ({ day, sales: 0, count: 0 }));
+
+        const filteredBills = rawBills.filter(bill => {
+            const billDate = bill.billingDate;
+            return (!startDate || billDate >= startDate) && (!endDate || billDate <= endDate);
+        });
+
+        filteredBills.forEach(bill => {
+            const date = new Date(bill.billingDate);
+            const dayIndex = date.getDay();
+            aggregation[dayIndex].sales += (bill.finalTotal || 0);
+            aggregation[dayIndex].count += 1;
+        });
+
+        return aggregation;
+    }, [rawBills, startDate, endDate]);
+
+    // Determine peak based on selected metric
+    const peakWeekday = [...weekdayData].sort((a, b) => b[weekdayMetric] - a[weekdayMetric])[0];
 
     return (
         <Container fluid className="py-4">
@@ -1231,6 +1265,124 @@ const Analytics = () => {
                         )) : (
                             <Col className="text-center py-4 text-muted">No frequent pairings found yet.</Col>
                         )}
+                    </Row>
+                </Card.Body>
+                <Card.Footer className="bg-white py-2 px-4 border-top">
+                    <small className="text-muted float-end fst-italic">Last Updated: {lastUpdatedRevenue}</small>
+                </Card.Footer>
+            </Card>
+
+            {/* SECTION: WEEKDAY PERFORMANCE */}
+            <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+                <Card.Header className="bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-2">
+                        <MdEvent className="text-primary" size={24} />
+                        <h5 className="mb-0 fw-bold">Weekday Performance</h5>
+                    </div>
+                    <div style={{ width: '180px' }}>
+                        <Form.Select
+                            size="sm"
+                            className="rounded-3 border-light shadow-sm"
+                            value={weekdayMetric}
+                            onChange={(e) => setWeekdayMetric(e.target.value)}
+                        >
+                            <option value="sales">Sales Amount (₹)</option>
+                            <option value="count">Bill Count (Qty)</option>
+                        </Form.Select>
+                    </div>
+                </Card.Header>
+                <Card.Body className="p-4 bg-light bg-opacity-10">
+                    <Row className="g-4">
+                        <Col lg={3}>
+                            <div className="d-flex flex-column gap-3 h-100">
+                                <InventoryStat
+                                    title={weekdayMetric === 'sales' ? "Highest Revenue" : "Highest Traffic"}
+                                    value={peakWeekday?.day || 'N/A'}
+                                    subtitle={weekdayMetric === 'sales' ? `Peak: ₹${peakWeekday?.sales.toLocaleString()}` : `Peak: ${peakWeekday?.count} Bills`}
+                                    icon={<MdTrendingUp />}
+                                    color={weekdayMetric === 'sales' ? "primary" : "info"}
+                                    isNumeric={false}
+                                />
+
+                                <Card className="border-0 shadow-sm rounded-3 p-3 bg-white">
+                                    <span className="small text-muted fw-bold text-uppercase" style={{ fontSize: '0.65rem' }}>Insights</span>
+                                    <div className="mt-2">
+                                        <div className="d-flex justify-content-between mb-2">
+                                            <span className="small text-muted">Daily Avg:</span>
+                                            <span className="fw-bold small">
+                                                {weekdayMetric === 'sales'
+                                                    ? `₹${(totalRevenue / 7).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+                                                    : `${(rawBills.length / 7).toFixed(1)} Bills`}
+                                            </span>
+                                        </div>
+                                        <div className="d-flex justify-content-between">
+                                            <span className="small text-muted">Weekend Vol:</span>
+                                            <span className="fw-bold small text-primary">
+                                                {(((weekdayData[0][weekdayMetric] + weekdayData[6][weekdayMetric]) /
+                                                    (weekdayData.reduce((acc, curr) => acc + curr[weekdayMetric], 0) || 1)) * 100).toFixed(1)}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </Card>
+                            </div>
+                        </Col>
+
+                        <Col lg={9}>
+                            <Card className="border-0 shadow-sm rounded-3 p-3">
+                                <div style={{ width: '100%', height: '380px' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={weekdayData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                                            <XAxis
+                                                dataKey="day"
+                                                tick={{ fontSize: 12, fill: axisColor }}
+                                                axisLine={false}
+                                                tickLine={false}
+                                            />
+                                            <YAxis
+                                                tick={{ fontSize: 11, fill: axisColor }}
+                                                tickFormatter={(v) => weekdayMetric === 'sales' ? `₹${v >= 1000 ? v / 1000 + 'k' : v}` : v}
+                                                axisLine={false}
+                                                tickLine={false}
+                                            />
+                                            <RechartsTooltip
+                                                cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+                                                content={({ active, payload, label }) => {
+                                                    if (active && payload && payload.length) {
+                                                        return (
+                                                            <div className="bg-white p-3 shadow-lg rounded-4 border-0">
+                                                                <p className="text-uppercase fw-bold text-muted mb-1" style={{ fontSize: '10px' }}>{label}</p>
+                                                                <div className="d-flex align-items-center justify-content-between gap-4">
+                                                                    <span className="small text-dark">{weekdayMetric === 'sales' ? 'Revenue' : 'Transactions'}</span>
+                                                                    <span className="fw-bold text-primary">
+                                                                        {weekdayMetric === 'sales' ? `₹${payload[0].value.toLocaleString()}` : `${payload[0].value} Bills`}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                }}
+                                            />
+                                            <Bar
+                                                dataKey={weekdayMetric}
+                                                radius={[6, 6, 0, 0]}
+                                                barSize={45}
+                                            >
+                                                {weekdayData.map((entry, index) => (
+                                                    <Cell
+                                                        key={`cell-${index}`}
+                                                        fill={entry.day === peakWeekday.day
+                                                            ? (weekdayMetric === 'sales' ? '#0d6efd' : '#0dcaf0')
+                                                            : '#e9ecef'}
+                                                    />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </Card>
+                        </Col>
                     </Row>
                 </Card.Body>
                 <Card.Footer className="bg-white py-2 px-4 border-top">
