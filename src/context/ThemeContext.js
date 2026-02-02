@@ -3,8 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-    // 1. Initialize state from localStorage or default to 'system'
-    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'system');
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -13,7 +12,6 @@ export const ThemeProvider = ({ children }) => {
         const applyTheme = (themeValue) => {
             let actualTheme = themeValue;
 
-            // 2. If 'system', check the prefers-color-scheme media query
             if (themeValue === 'system') {
                 actualTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             }
@@ -25,7 +23,7 @@ export const ThemeProvider = ({ children }) => {
         applyTheme(theme);
         localStorage.setItem('theme', theme);
 
-        // 3. Listen for system preference changes if 'system' is selected
+        // 3. Listen for system preference changes ONLY if 'system' is the active choice
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         const handleChange = () => {
             if (theme === 'system') applyTheme('system');

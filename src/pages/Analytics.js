@@ -370,6 +370,31 @@ const Analytics = () => {
         }
     }, [selectedProduct, productTimeFrame, productStartDate, productEndDate, rawBills, processProductSalesData]);
 
+    // --- 5. MARKET BASKET ANALYSIS (Frequently Bought Together) ---
+    const crossSellData = useMemo(() => {
+        const pairCounts = {};
+
+        rawBills.forEach(bill => {
+            const items = bill.products?.map(p => p.name).filter(Boolean) || [];
+            if (items.length < 2) return;
+
+            // Create unique pairs (A + B)
+            for (let i = 0; i < items.length; i++) {
+                for (let j = i + 1; j < items.length; j++) {
+                    // Sort names alphabetically so (Bread, Milk) is the same as (Milk, Bread)
+                    const pair = [items[i], items[j]].sort();
+                    const pairKey = pair.join(' + ');
+                    pairCounts[pairKey] = (pairCounts[pairKey] || 0) + 1;
+                }
+            }
+        });
+
+        return Object.entries(pairCounts)
+            .map(([pair, count]) => ({ pair, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10); // Top 10 pairings
+    }, [rawBills]);
+
     // --- 6. RENDER HELPERS ---
     const renderActiveShape = (props) => {
         const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value } = props;
@@ -1154,6 +1179,60 @@ const Analytics = () => {
                 <Card.Footer className="bg-white py-2 px-4 border-top">
                     <small className="text-muted float-end fst-italic">Last Updated: {lastUpdatedRevenue}</small>
                 </Card.Footer>
+            </Card>
+
+            {/* SECTION 6: PRODUCT PAIRING (Market Basket Analysis) */}
+            <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+                <Card.Header className="bg-white border-bottom py-3 px-4">
+                    <div className="d-flex align-items-center gap-2">
+                        <MdFunctions className="text-primary" size={24} />
+                        <h5 className="mb-0 fw-bold">Frequently Bought Together</h5>
+                    </div>
+                </Card.Header>
+                <Card.Body className="p-4 bg-light bg-opacity-10">
+                    <p className="text-muted small mb-4">
+                        Discover which items are most commonly purchased in the same transaction to optimize combos and offers.
+                    </p>
+                    <Row className="g-3">
+                        {crossSellData.length > 0 ? crossSellData.map((item, idx) => (
+                            <Col md={6} lg={4} key={idx}>
+                                <Card className="border-0 shadow-sm rounded-4 h-100 overflow-hidden bg-white">
+                                    <div className="d-flex h-100">
+                                        <div className="bg-primary d-flex align-items-center justify-content-center" style={{ width: '45px' }}>
+                                            <span className="text-white fw-bold" style={{ transform: 'rotate(-90deg)', whiteSpace: 'nowrap', fontSize: '0.7rem' }}>
+                                                #{idx + 1} PAIR
+                                            </span>
+                                        </div>
+                                        <Card.Body className="p-3">
+                                            <div className="d-flex justify-content-between align-items-start mb-2">
+                                                <div className="d-flex flex-column">
+                                                    <span className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '0.6rem' }}>Highly Correlated</span>
+                                                    <div className="fw-bold text-dark d-flex align-items-center gap-2">
+                                                        <span className="px-2 py-1 bg-light rounded-2 border" style={{ fontSize: '0.85rem' }}>{item.pair.split(' + ')[0]}</span>
+                                                        <span className="text-primary">+</span>
+                                                        <span className="px-2 py-1 bg-light rounded-2 border" style={{ fontSize: '0.85rem' }}>{item.pair.split(' + ')[1]}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="d-flex align-items-center gap-2 mt-2">
+                                                <div className="progress flex-grow-1" style={{ height: '4px' }}>
+                                                    <div
+                                                        className="progress-bar bg-primary"
+                                                        role="progressbar"
+                                                        style={{ width: `${(item.count / crossSellData[0].count) * 100}%` }}
+                                                    ></div>
+                                                </div>
+                                                <span className="text-primary fw-bold" style={{ fontSize: '0.8rem' }}>{item.count}</span>
+                                            </div>
+                                        </Card.Body>
+                                    </div>
+                                </Card>
+                            </Col>
+                        )) : (
+                            <Col className="text-center py-4 text-muted">No frequent pairings found yet.</Col>
+                        )}
+                    </Row>
+                </Card.Body>
             </Card>
         </Container>
     );
