@@ -214,12 +214,12 @@ const Dashboard = () => {
                 </Col>
 
                 <Col lg={4}>
-                    <Card className="border-0 shadow-sm rounded-4 mb-4">
+                    <Card className="border-0 shadow-sm rounded-4 mb-4 h-100">
                         <Card.Header className="bg-transparent border-0 pt-4 px-4">
                             <h5 className="fw-bold mb-0">Quick Actions</h5>
                         </Card.Header>
-                        <Card.Body className="p-4">
-                            <div className="d-grid gap-3">
+                        <Card.Body className="p-4 d-flex align-items-center">
+                            <div className="d-grid gap-3 w-100">
                                 <Button variant="outline-darkblue" className="text-start py-3 d-flex align-items-center" onClick={() => navigate('/products')}>
                                     <MdInventory className="me-3" size={20} /> Manage Inventory
                                 </Button>

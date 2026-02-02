@@ -1233,6 +1233,9 @@ const Analytics = () => {
                         )}
                     </Row>
                 </Card.Body>
+                <Card.Footer className="bg-white py-2 px-4 border-top">
+                    <small className="text-muted float-end fst-italic">Last Updated: {lastUpdatedRevenue}</small>
+                </Card.Footer>
             </Card>
         </Container>
     );
