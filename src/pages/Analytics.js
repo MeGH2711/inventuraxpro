@@ -18,7 +18,7 @@ import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import {
     MdTimeline, MdTrendingUp, MdEvent, MdFunctions, MdClear,
     MdDateRange, MdAnalytics, MdPieChart, MdLayers, MdBarChart,
-    MdTableRows, MdReceipt
+    MdTableRows, MdReceipt, MdChevronLeft, MdChevronRight
 } from 'react-icons/md';
 import { BiSolidCategory } from "react-icons/bi";
 
@@ -308,68 +308,6 @@ const Analytics = () => {
         productEndDate !== productMaxDate ||
         productTimeFrame !== 'daily';
 
-    // --- 5. DATA FETCHING & SYNC ---
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                // Fetch Bills
-                const billsQuery = query(collection(db, "bills"), orderBy("billingDate", "asc"));
-                const billSnapshot = await getDocs(billsQuery);
-                const fetchedBills = billSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setRawBills(fetchedBills);
-
-                if (fetchedBills.length > 0) {
-                    const min = fetchedBills[0].billingDate;
-                    const max = fetchedBills[fetchedBills.length - 1].billingDate;
-
-                    // Setup Revenue Filters
-                    setStartDate(min); setEndDate(max); setAbsMinDate(min); setAbsMaxDate(max);
-                    processChartData(fetchedBills, 'daily', min, max);
-
-                    // Setup Product Filters
-                    setProductStartDate(min); setProductEndDate(max);
-                    setProductMinDate(min); setProductMaxDate(max);
-
-                    // Extract Metadata
-                    const names = new Set();
-                    fetchedBills.forEach(b => b.products?.forEach(p => p.name && names.add(p.name)));
-                    setAllProductNames([...names]);
-
-                    const top = getTopSellingProduct(fetchedBills);
-                    if (top) setSelectedProduct(top);
-
-                    processPaymentData(fetchedBills);
-
-                    setTopProductsStartDate(min);
-                    setTopProductsEndDate(max);
-                }
-                setLastUpdatedRevenue(formatTimestamp());
-
-                const productSnapshot = await getDocs(collection(db, "products"));
-                const fetchedProducts = productSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                setProducts(fetchedProducts);
-                processCategoryData(fetchedProducts);
-                setLastUpdatedInventory(formatTimestamp());
-
-            } catch (error) {
-                console.error("Error fetching analytics:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, [processChartData, processCategoryData, getTopSellingProduct, processPaymentData]);
-
-    useEffect(() => {
-        if (selectedProduct) {
-            processProductSalesData(rawBills, selectedProduct, productTimeFrame, productStartDate, productEndDate);
-        }
-    }, [selectedProduct, productTimeFrame, productStartDate, productEndDate, rawBills, processProductSalesData]);
-
     // --- 5. MARKET BASKET ANALYSIS (Frequently Bought Together) ---
     const crossSellData = useMemo(() => {
         const pairCounts = {};
@@ -395,6 +333,17 @@ const Analytics = () => {
             .slice(0, 10); // Top 10 pairings
     }, [rawBills]);
 
+    // Pagination state for Frequently Bought Together
+    const [pairingIndex, setPairingIndex] = useState(0);
+    const pairingsPerPage = 6;
+
+    // Reset pagination if the raw data changes
+    useEffect(() => {
+        setPairingIndex(0);
+    }, [rawBills]);
+
+    const visiblePairings = crossSellData.slice(pairingIndex, pairingIndex + pairingsPerPage);
+
     // --- 6. RENDER HELPERS ---
     const renderActiveShape = (props) => {
         const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value } = props;
@@ -402,10 +351,12 @@ const Analytics = () => {
         const textColor = isDark ? '#f8f9fa' : '#333';
         const subTextColor = isDark ? '#a0aab4' : '#6c757d';
 
-        const isPaymentChart = ['UPI', 'Cash', 'Card', 'Unknown'].includes(payload.name) ||
-            paymentModeData.some(item => item.name === payload.name);
+        // Check if the current segment belongs to Payment or Delivery distributions
+        const isPaymentChart = paymentModeData.some(item => item.name === payload.name);
+        const isDeliveryChart = deliveryModeData.some(item => item.name === payload.name);
 
-        const unitLabel = isPaymentChart ? 'Bills' : 'Products';
+        // Use "Orders" for logistics/payments, and "Products" for inventory/categories
+        const unitLabel = (isPaymentChart || isDeliveryChart) ? 'Orders' : 'Products';
 
         return (
             <g>
@@ -519,6 +470,96 @@ const Analytics = () => {
 
     // Determine peak based on selected metric
     const peakWeekday = [...weekdayData].sort((a, b) => b[weekdayMetric] - a[weekdayMetric])[0];
+
+    // --- 6. DELIVERY MODE STATE & LOGIC ---
+    const [deliveryModeData, setDeliveryModeData] = useState([]);
+    const [deliveryActiveIndex, setDeliveryActiveIndex] = useState(0);
+    const [deliveryViewMode, setDeliveryViewMode] = useState('chart');
+
+    const processDeliveryData = useCallback((bills) => {
+        const counts = {};
+        bills.forEach(bill => {
+            const mode = bill.modeOfDelivery || bill.deliveryMode || 'In-Store';
+
+            counts[mode] = (counts[mode] || 0) + 1;
+        });
+
+        const formatted = Object.keys(counts).map(key => ({
+            name: key,
+            value: counts[key]
+        }));
+
+        setDeliveryModeData(formatted.sort((a, b) => b.value - a.value));
+    }, []);
+
+    const onDeliveryPieEnter = (_, index) => setDeliveryActiveIndex(index);
+
+    const topDeliveryMode = deliveryModeData.length > 0
+        ? [...deliveryModeData].sort((a, b) => b.value - a.value)[0]
+        : { name: 'N/A', value: 0 };
+
+    // DATA FETCHING & SYNC
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                // Fetch Bills
+                const billsQuery = query(collection(db, "bills"), orderBy("billingDate", "asc"));
+                const billSnapshot = await getDocs(billsQuery);
+                const fetchedBills = billSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setRawBills(fetchedBills);
+
+                if (fetchedBills.length > 0) {
+                    const min = fetchedBills[0].billingDate;
+                    const max = fetchedBills[fetchedBills.length - 1].billingDate;
+
+                    // Setup Revenue Filters
+                    setStartDate(min); setEndDate(max); setAbsMinDate(min); setAbsMaxDate(max);
+                    processChartData(fetchedBills, 'daily', min, max);
+
+                    // Setup Product Filters
+                    setProductStartDate(min); setProductEndDate(max);
+                    setProductMinDate(min); setProductMaxDate(max);
+
+                    // Extract Metadata
+                    const names = new Set();
+                    fetchedBills.forEach(b => b.products?.forEach(p => p.name && names.add(p.name)));
+                    setAllProductNames([...names]);
+
+                    const top = getTopSellingProduct(fetchedBills);
+                    if (top) setSelectedProduct(top);
+
+                    processPaymentData(fetchedBills);
+
+                    setTopProductsStartDate(min);
+                    setTopProductsEndDate(max);
+                }
+                setLastUpdatedRevenue(formatTimestamp());
+
+                const productSnapshot = await getDocs(collection(db, "products"));
+                const fetchedProducts = productSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setProducts(fetchedProducts);
+                processCategoryData(fetchedProducts);
+                setLastUpdatedInventory(formatTimestamp());
+                processDeliveryData(fetchedBills);
+
+            } catch (error) {
+                console.error("Error fetching analytics:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [processChartData, processCategoryData, getTopSellingProduct, processPaymentData, processDeliveryData]);
+
+    useEffect(() => {
+        if (selectedProduct) {
+            processProductSalesData(rawBills, selectedProduct, productTimeFrame, productStartDate, productEndDate);
+        }
+    }, [selectedProduct, productTimeFrame, productStartDate, productEndDate, rawBills, processProductSalesData]);
 
     return (
         <Container fluid className="py-4">
@@ -1217,53 +1258,85 @@ const Analytics = () => {
 
             {/* SECTION 6: PRODUCT PAIRING (Market Basket Analysis) */}
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
-                <Card.Header className="bg-white border-bottom py-3 px-4">
+                <Card.Header className="bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center gap-2">
                         <MdFunctions className="text-primary" size={24} />
                         <h5 className="mb-0 fw-bold">Frequently Bought Together</h5>
                     </div>
+
+                    {/* Pagination Controls */}
+                    <div className="d-flex align-items-center gap-2 bg-light p-1 rounded-2 border">
+                        <span className="text-muted fw-medium px-2" style={{ fontSize: '0.75rem' }}>
+                            {pairingIndex + 1}-{Math.min(pairingIndex + pairingsPerPage, crossSellData.length)} of {crossSellData.length}
+                        </span>
+                        <div className="btn-group">
+                            <Button
+                                variant="white"
+                                size="sm"
+                                className="border-0"
+                                disabled={pairingIndex === 0}
+                                onClick={() => setPairingIndex(prev => Math.max(0, prev - pairingsPerPage))}
+                            >
+                                <MdChevronLeft />
+                            </Button>
+                            <Button
+                                variant="white"
+                                size="sm"
+                                className="border-0 border-start"
+                                disabled={pairingIndex + pairingsPerPage >= crossSellData.length}
+                                onClick={() => setPairingIndex(prev => prev + pairingsPerPage)}
+                            >
+                                <MdChevronRight />
+                            </Button>
+                        </div>
+                    </div>
                 </Card.Header>
+
                 <Card.Body className="p-4 bg-light bg-opacity-10">
                     <p className="text-muted small mb-4">
                         Discover which items are most commonly purchased in the same transaction to optimize combos and offers.
                     </p>
                     <Row className="g-3">
-                        {crossSellData.length > 0 ? crossSellData.map((item, idx) => (
+                        {visiblePairings.length > 0 ? visiblePairings.map((item, idx) => (
                             <Col md={6} lg={4} key={idx}>
-                                <Card className="border-0 shadow-sm rounded-4 h-100 overflow-hidden bg-white">
+                                <Card className="border-0 shadow-sm rounded-4 h-100 overflow-hidden bg-white hover-lift transition-all">
                                     <div className="d-flex h-100">
                                         <div className="bg-primary d-flex align-items-center justify-content-center" style={{ width: '45px' }}>
                                             <span className="text-white fw-bold" style={{ transform: 'rotate(-90deg)', whiteSpace: 'nowrap', fontSize: '0.7rem' }}>
-                                                #{idx + 1} PAIR
+                                                #{pairingIndex + idx + 1} PAIR
                                             </span>
                                         </div>
                                         <Card.Body className="p-3">
-                                            <div className="d-flex justify-content-between align-items-start mb-2">
-                                                <div className="d-flex flex-column">
-                                                    <span className="text-muted text-uppercase fw-bold mb-1" style={{ fontSize: '0.6rem' }}>Highly Correlated</span>
-                                                    <div className="fw-bold text-dark d-flex align-items-center gap-2">
-                                                        <span className="px-2 py-1 bg-light rounded-2 border" style={{ fontSize: '0.85rem' }}>{item.pair.split(' + ')[0]}</span>
-                                                        <span className="text-primary">+</span>
-                                                        <span className="px-2 py-1 bg-light rounded-2 border" style={{ fontSize: '0.85rem' }}>{item.pair.split(' + ')[1]}</span>
+                                            <div className="d-flex flex-column h-100 justify-content-between">
+                                                <div>
+                                                    <span className="text-muted text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '0.6rem' }}>Highly Correlated</span>
+                                                    <div className="fw-bold text-dark d-flex flex-wrap align-items-center gap-2 mt-1">
+                                                        <span className="px-2 py-1 bg-light rounded-2 border shadow-sm" style={{ fontSize: '0.8rem' }}>{item.pair.split(' + ')[0]}</span>
+                                                        <span className="text-primary small">+</span>
+                                                        <span className="px-2 py-1 bg-light rounded-2 border shadow-sm" style={{ fontSize: '0.8rem' }}>{item.pair.split(' + ')[1]}</span>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div className="d-flex align-items-center gap-2 mt-2">
-                                                <div className="progress flex-grow-1" style={{ height: '4px' }}>
-                                                    <div
-                                                        className="progress-bar bg-primary"
-                                                        role="progressbar"
-                                                        style={{ width: `${(item.count / crossSellData[0].count) * 100}%` }}
-                                                    ></div>
+
+                                                <div className="mt-3">
+                                                    <div className="d-flex justify-content-between align-items-center mb-1">
+                                                        <span className="text-muted small" style={{ fontSize: '0.7rem' }}>Frequency</span>
+                                                        <span className="text-primary fw-bold" style={{ fontSize: '0.8rem' }}>{item.count} Times</span>
+                                                    </div>
+                                                    <div className="progress" style={{ height: '4px' }}>
+                                                        <div
+                                                            className="progress-bar bg-primary"
+                                                            role="progressbar"
+                                                            style={{ width: `${(item.count / crossSellData[0].count) * 100}%` }}
+                                                        ></div>
+                                                    </div>
                                                 </div>
-                                                <span className="text-primary fw-bold" style={{ fontSize: '0.8rem' }}>{item.count}</span>
                                             </div>
                                         </Card.Body>
                                     </div>
                                 </Card>
                             </Col>
                         )) : (
-                            <Col className="text-center py-4 text-muted">No frequent pairings found yet.</Col>
+                            <Col className="text-center py-5 text-muted">No frequent pairings found yet.</Col>
                         )}
                     </Row>
                 </Card.Body>
@@ -1388,6 +1461,137 @@ const Analytics = () => {
                 <Card.Footer className="bg-white py-2 px-4 border-top">
                     <small className="text-muted float-end fst-italic">Last Updated: {lastUpdatedRevenue}</small>
                 </Card.Footer>
+            </Card>
+            {/* SECTION: DELIVERY MODE DISTRIBUTION */}
+            <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+                <Card.Header className="bg-white border-bottom py-3 px-4">
+                    <div className="d-flex align-items-center gap-2">
+                        <MdLayers className="text-secondary" size={24} />
+                        <h5 className="mb-0 fw-bold">Delivery Mode Distribution</h5>
+                    </div>
+                </Card.Header>
+                <Card.Body className="p-4 bg-light bg-opacity-10">
+                    <Row className="g-4">
+                        <Col md={4} lg={3}>
+                            <div className="d-flex flex-column gap-3 h-100">
+                                <InventoryStat
+                                    title="Primary Channel"
+                                    value={topDeliveryMode.name}
+                                    subtitle={`${topDeliveryMode.value} orders`}
+                                    icon={<MdTrendingUp />}
+                                    color="secondary"
+                                    isNumeric={false}
+                                />
+                                <InventoryStat
+                                    title="Fulfillment Types"
+                                    value={deliveryModeData.length}
+                                    subtitle="Active methods"
+                                    icon={<MdLayers />}
+                                    color="dark"
+                                />
+                            </div>
+                        </Col>
+                        <Col md={8} lg={9}>
+                            <Card className="border-0 shadow-sm rounded-3 p-3 h-100">
+                                <div className="d-flex align-items-center justify-content-between mb-2">
+                                    <div className="d-flex align-items-center">
+                                        <MdPieChart className="text-secondary me-2" size={20} />
+                                        <span className="fw-bold small text-uppercase text-muted">Fulfillment Spread</span>
+                                    </div>
+                                    <div className="btn-group shadow-sm" role="group">
+                                        <Button
+                                            variant={deliveryViewMode === 'chart' ? 'secondary' : 'outline-secondary'}
+                                            size="sm"
+                                            onClick={() => setDeliveryViewMode('chart')}
+                                        >
+                                            <MdPieChart /> Chart
+                                        </Button>
+                                        <Button
+                                            variant={deliveryViewMode === 'table' ? 'secondary' : 'outline-secondary'}
+                                            size="sm"
+                                            onClick={() => setDeliveryViewMode('table')}
+                                        >
+                                            <MdTableRows /> Table
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {loading ? (
+                                    <div className="text-center py-5"><Spinner animation="border" variant="secondary" /></div>
+                                ) : (
+                                    deliveryViewMode === 'chart' ? (
+                                        <div style={{ width: '100%', height: '400px' }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart margin={{ right: 80 }}>
+                                                    <Pie
+                                                        activeIndex={deliveryActiveIndex}
+                                                        activeShape={renderActiveShape}
+                                                        data={deliveryModeData}
+                                                        innerRadius={80}
+                                                        outerRadius={120}
+                                                        paddingAngle={8}
+                                                        dataKey="value"
+                                                        onMouseEnter={onDeliveryPieEnter}
+                                                    >
+                                                        {deliveryModeData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Legend verticalAlign="middle" align="right" layout="vertical" content={renderCustomLegend} />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    ) : (
+                                        <div style={{ height: 400, overflowY: 'auto' }}>
+                                            <Table hover responsive className="align-middle border-light mt-3">
+                                                <thead className="bg-light sticky-top">
+                                                    <tr className="text-center">
+                                                        <th className="small text-muted border-0 text-start ps-4">Delivery Method</th>
+                                                        <th className="small text-muted border-0">Order Volume</th>
+                                                        <th className="small text-muted border-0">Percentage</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {deliveryModeData.map((row, idx) => {
+                                                        const percentage = ((row.value / (totalTransactions || 1)) * 100).toFixed(1);
+                                                        return (
+                                                            <tr className="text-center" key={idx}>
+                                                                <td className="fw-medium text-start ps-4">
+                                                                    <span
+                                                                        className="d-inline-block rounded-circle me-2"
+                                                                        style={{ width: '10px', height: '10px', backgroundColor: COLORS[(idx + 3) % COLORS.length] }}
+                                                                    ></span>
+                                                                    {row.name}
+                                                                </td>
+                                                                {/* Updated Format: e.g., 6 Orders */}
+                                                                <td className="fw-bold">{row.value} Orders</td>
+                                                                <td>
+                                                                    <div className="d-flex align-items-center justify-content-center gap-2">
+                                                                        <div className="progress w-50" style={{ height: '6px' }}>
+                                                                            <div
+                                                                                className="progress-bar"
+                                                                                role="progressbar"
+                                                                                style={{
+                                                                                    width: `${percentage}%`,
+                                                                                    backgroundColor: COLORS[(idx + 3) % COLORS.length]
+                                                                                }}
+                                                                            ></div>
+                                                                        </div>
+                                                                        <span className="small text-muted">{percentage}%</span>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </Table>
+                                        </div>
+                                    )
+                                )}
+                            </Card>
+                        </Col>
+                    </Row>
+                </Card.Body>
             </Card>
         </Container>
     );

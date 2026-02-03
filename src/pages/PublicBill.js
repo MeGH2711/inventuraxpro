@@ -149,7 +149,7 @@ const PublicBill = () => {
             </style>
 
             {/* Desktop Navbar */}
-            <nav className="navbar navbar-light bg-white border-bottom sticky-top py-3 d-none d-md-block">
+            <nav className="navbar navbar-light bg-dark text-light border-bottom sticky-top py-3 d-none d-md-block">
                 <Container>
                     <div className="d-flex justify-content-between align-items-center w-100">
                         <div className="d-flex align-items-center">
@@ -306,8 +306,8 @@ const PublicBill = () => {
                                         <span className="opacity-75">Overall Discount ({bill.overallDiscount}%)</span>
                                         <span>- ₹{(bill.overallTotal - bill.finalTotal).toFixed(2)}</span>
                                     </div>
-                                    <div className="p-3 rounded-3 bg-white bg-opacity-10 mb-3">
-                                        <div className="d-flex justify-content-between align-items-end">
+                                    <div className="p-3 rounded-3 bg-primary bg-opacity-10 mb-3">
+                                        <div className="d-flex justify-content-between align-items-center">
                                             <span className="small opacity-75">Amount Paid</span>
                                             <span className="h2 fw-bold mb-0 text-warning">₹{bill.finalTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                                         </div>
@@ -366,8 +366,8 @@ const PublicBill = () => {
             </Container>
 
             {/* Mobile Sticky Footer */}
-            <div className="d-md-none fixed-bottom bg-white border-top p-3 shadow-lg">
-                <Button variant="dark" className="w-100 py-3 rounded-pill fw-bold shadow" onClick={handleDownload}>
+            <div className="d-md-none fixed-bottom bg-dark border-top p-3 shadow-lg">
+                <Button variant="light" className="w-100 py-3 rounded-pill fw-bold shadow" onClick={handleDownload}>
                     <MdDownload className="me-2" /> Download PDF Receipt
                 </Button>
             </div>
