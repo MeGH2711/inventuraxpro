@@ -44,13 +44,12 @@ const timeFrameLabels = {
 };
 
 const Analytics = () => {
-    // --- 1. SHARED STATE ---
+    // Shared / Core States
     const [loading, setLoading] = useState(true);
     const [rawBills, setRawBills] = useState([]);
-
     const [products, setProducts] = useState([]);
 
-    // --- 2. REVENUE REPORT STATE & LOGIC ---
+    // SECTION 1: Revenue Report States
     const [chartData, setChartData] = useState([]);
     const [timeFrame, setTimeFrame] = useState('daily');
     const [viewMode, setViewMode] = useState('chart');
@@ -60,78 +59,13 @@ const Analytics = () => {
     const [absMaxDate, setAbsMaxDate] = useState('');
     const [lastUpdatedRevenue, setLastUpdatedRevenue] = useState('');
 
-    const processChartData = useCallback((bills, range, start, end) => {
-        const aggregation = {};
-        const filtered = bills.filter(bill => {
-            const billDate = bill.billingDate;
-            let matchesDate = true;
-            if (start && end) matchesDate = billDate >= start && billDate <= end;
-            else if (start) matchesDate = billDate >= start;
-            else if (end) matchesDate = billDate <= end;
-            return matchesDate;
-        });
-
-        filtered.forEach(bill => {
-            const date = new Date(bill.billingDate);
-            let label;
-            if (range === 'daily') label = formatDateLabel(date);
-            else if (range === 'weekly') {
-                const first = date.getDate() - date.getDay();
-                const sunday = new Date(new Date(date).setDate(first));
-                label = `Week of ${formatDateLabel(sunday)}`;
-            } else if (range === 'monthly') label = date.toLocaleString('default', { month: 'short', year: 'numeric' });
-            else if (range === 'yearly') label = date.getFullYear().toString();
-
-            aggregation[label] = (aggregation[label] || 0) + (bill.finalTotal || 0);
-        });
-
-        setChartData(Object.keys(aggregation).map(key => ({
-            name: key,
-            sales: parseFloat(aggregation[key].toFixed(2))
-        })));
-    }, []);
-
-    const handleFilterUpdate = (newTimeFrame, start, end) => {
-        processChartData(rawBills, newTimeFrame, start, end);
-    };
-
-    const resetFilters = () => {
-        setStartDate(absMinDate); setEndDate(absMaxDate); setTimeFrame('daily');
-        processChartData(rawBills, 'daily', absMinDate, absMaxDate);
-    };
-
-    // Revenue Derived Metrics
-    const totalRevenue = chartData.reduce((acc, curr) => acc + curr.sales, 0);
-    const avgSales = totalRevenue / (chartData.length || 1);
-    const peakSales = chartData.length > 0 ? Math.max(...chartData.map(d => d.sales)) : 0;
-
-    // --- 3. INVENTORY DISTRIBUTION STATE & LOGIC ---
+    // SECTION 2: Inventory Distribution States
     const [categoryData, setCategoryData] = useState([]);
     const [activeIndex, setActiveIndex] = useState(0);
     const [lastUpdatedInventory, setLastUpdatedInventory] = useState('');
     const [categoryViewMode, setCategoryViewMode] = useState('chart');
 
-    const processCategoryData = useCallback((products) => {
-        const counts = {};
-        products.forEach(p => {
-            if (p.category) counts[p.category] = (counts[p.category] || 0) + 1;
-        });
-        const formatted = Object.keys(counts).map(key => ({
-            name: key,
-            value: counts[key]
-        }));
-        setCategoryData(formatted);
-    }, []);
-
-    const onPieEnter = (_, index) => setActiveIndex(index);
-
-    // Inventory Derived Metrics
-    const totalProducts = categoryData.reduce((acc, curr) => acc + curr.value, 0);
-    const topCategory = categoryData.length > 0
-        ? [...categoryData].sort((a, b) => b.value - a.value)[0]
-        : { name: 'N/A', value: 0 };
-
-    // --- 4. PRODUCT SALES ANALYTICS STATE & LOGIC ---
+    // SECTION 3: Product Sales Analytics States
     const [productSalesData, setProductSalesData] = useState([]);
     const [productViewMode, setProductViewMode] = useState('chart');
     const [selectedProduct, setSelectedProduct] = useState('');
@@ -142,22 +76,107 @@ const Analytics = () => {
     const [productMinDate, setProductMinDate] = useState('');
     const [productMaxDate, setProductMaxDate] = useState('');
 
+    // SECTION 4: Top Selling Products States
+    const [topProductsIndex, setTopProductsIndex] = useState(0);
+    const [topProductsStartDate, setTopProductsStartDate] = useState('');
+    const [topProductsEndDate, setTopProductsEndDate] = useState('');
+    const [topProductsViewMode, setTopProductsViewMode] = useState('chart');
+    const [topProductsCategory, setTopProductsCategory] = useState('All');
+    const pageSize = 10;
+
+    // SECTION 5: Payment Mode States
+    const [paymentModeData, setPaymentModeData] = useState([]);
+    const [paymentActiveIndex, setPaymentActiveIndex] = useState(0);
+    const [paymentViewMode, setPaymentViewMode] = useState('chart');
+
+    // SECTION 6: Market Basket States
+    const [pairingIndex, setPairingIndex] = useState(0);
+    const pairingsPerPage = 6;
+
+    // SECTION 7: Weekday Performance States
+    const [weekdayMetric, setWeekdayMetric] = useState('sales');
+
+    // SECTION 8: Delivery Mode States
+    const [deliveryModeData, setDeliveryModeData] = useState([]);
+    const [deliveryActiveIndex, setDeliveryActiveIndex] = useState(0);
+    const [deliveryViewMode, setDeliveryViewMode] = useState('chart');
+
+    // SECTION 9: Revenue by Category States
+    const [revenueCatViewMode, setRevenueCatViewMode] = useState('chart');
+
+    // LOGICS
+
+    // SECTION 1: Revenue Report Logic
+
+    // Callback
+    const processChartData = useCallback((bills, range, start, end) => {
+        const aggregation = {};
+        const filtered = bills.filter(bill => {
+            const billDate = bill.billingDate;
+            let matchesDate = true;
+            if (start && end) matchesDate = billDate >= start && billDate <= end;
+            else if (start) matchesDate = billDate >= start;
+            else if (end) matchesDate = billDate <= end;
+            return matchesDate;
+        });
+        filtered.forEach(bill => {
+            const date = new Date(bill.billingDate);
+            let label;
+            if (range === 'daily') label = formatDateLabel(date);
+            else if (range === 'weekly') {
+                const first = date.getDate() - date.getDay();
+                const sunday = new Date(new Date(date).setDate(first));
+                label = `Week of ${formatDateLabel(sunday)}`;
+            } else if (range === 'monthly') label = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+            else if (range === 'yearly') label = date.getFullYear().toString();
+            aggregation[label] = (aggregation[label] || 0) + (bill.finalTotal || 0);
+        });
+        setChartData(Object.keys(aggregation).map(key => ({
+            name: key,
+            sales: parseFloat(aggregation[key].toFixed(2))
+        })));
+    }, []);
+
+    const totalRevenue = chartData.reduce((acc, curr) => acc + curr.sales, 0);
+    const avgSales = totalRevenue / (chartData.length || 1);
+    const peakSales = chartData.length > 0 ? Math.max(...chartData.map(d => d.sales)) : 0;
+
+    const handleFilterUpdate = (newTimeFrame, start, end) => { processChartData(rawBills, newTimeFrame, start, end); };
+    const resetFilters = () => {
+        setStartDate(absMinDate); setEndDate(absMaxDate); setTimeFrame('daily');
+        processChartData(rawBills, 'daily', absMinDate, absMaxDate);
+    };
+
+    // SECTION 2: Inventory Distribution Logic
+
+    // Callback
+    const processCategoryData = useCallback((products) => {
+        const counts = {};
+        products.forEach(p => {
+            if (p.category) counts[p.category] = (counts[p.category] || 0) + 1;
+        });
+        setCategoryData(Object.keys(counts).map(key => ({ name: key, value: counts[key] })));
+    }, []);
+
+    const totalProducts = categoryData.reduce((acc, curr) => acc + curr.value, 0);
+    const topCategory = categoryData.length > 0
+        ? [...categoryData].sort((a, b) => b.value - a.value)[0]
+        : { name: 'N/A', value: 0 };
+
+    const onPieEnter = (_, index) => setActiveIndex(index);
+
+    // SECTION 3: Product Sales Analytics Logic
+
+    // Callback
     const getTopSellingProduct = useCallback((bills) => {
         const productTotals = {};
         bills.forEach(bill => {
             bill.products?.forEach(p => {
-                if (!p.name) return;
-                productTotals[p.name] = (productTotals[p.name] || 0) + (p.quantity || 0);
+                if (p.name) productTotals[p.name] = (productTotals[p.name] || 0) + (p.quantity || 0);
             });
         });
-        let topProduct = '';
-        let maxQty = 0;
-        Object.entries(productTotals).forEach(([name, qty]) => {
-            if (qty > maxQty) {
-                maxQty = qty;
-                topProduct = name;
-            }
-        });
+        let topProduct = ''; let maxQty = 0;
+        Object.entries(productTotals).forEach(([name, qty]) => { if (qty > maxQty) { maxQty = qty; topProduct = name; } });
         return topProduct;
     }, []);
 
@@ -165,13 +184,8 @@ const Analytics = () => {
         const aggregation = {};
         bills.forEach(bill => {
             const billDate = bill.billingDate;
-            let matchesDate = true;
-            if (start && end) matchesDate = billDate >= start && billDate <= end;
-            else if (start) matchesDate = billDate >= start;
-            else if (end) matchesDate = billDate <= end;
-
+            let matchesDate = (!start || billDate >= start) && (!end || billDate <= end);
             if (!matchesDate) return;
-
             const date = new Date(billDate);
             let label;
             if (range === 'daily') label = formatDateLabel(date);
@@ -181,52 +195,40 @@ const Analytics = () => {
                 label = `Week of ${formatDateLabel(sunday)}`;
             } else if (range === 'monthly') label = date.toLocaleString('default', { month: 'short', year: 'numeric' });
             else if (range === 'yearly') label = date.getFullYear().toString();
-
             bill.products?.forEach(p => {
-                if (p.name === productName) {
-                    aggregation[label] = (aggregation[label] || 0) + (p.quantity || 0);
-                }
+                if (p.name === productName) { aggregation[label] = (aggregation[label] || 0) + (p.quantity || 0); }
             });
         });
         setProductSalesData(Object.keys(aggregation).map(key => ({ name: key, quantity: aggregation[key] })));
     }, []);
 
-    // Pagination state for Top Selling Products chart
-    const [topProductsIndex, setTopProductsIndex] = useState(0);
-    const pageSize = 10;
+    const totalQtySold = productSalesData.reduce((acc, curr) => acc + curr.quantity, 0);
+    const avgQtyPerPeriod = totalQtySold / (productSalesData.length || 1);
+    const peakQty = productSalesData.length > 0 ? Math.max(...productSalesData.map(d => d.quantity)) : 0;
+    const bestSellerName = useMemo(() => getTopSellingProduct(rawBills), [rawBills, getTopSellingProduct]);
 
-    const [topProductsStartDate, setTopProductsStartDate] = useState('');
-    const [topProductsEndDate, setTopProductsEndDate] = useState('');
+    const resetProductFilters = () => {
+        setProductStartDate(productMinDate); setProductEndDate(productMaxDate); setProductTimeFrame('daily');
+    };
 
-    const [topProductsViewMode, setTopProductsViewMode] = useState('chart');
-
-    const [topProductsCategory, setTopProductsCategory] = useState('All');
+    // SECTION 4: Top Selling Products Logic
 
     const allTopProducts = useMemo(() => {
         const productMap = {};
-
-        // 1. Populate the map to fix the 'unused-vars' warning 
-        // This also speeds up lookup from O(N) to O(1)
         const nameToCategoryMap = {};
-        products.forEach(p => {
-            nameToCategoryMap[p.name] = p.category;
-        });
+        products.forEach(p => { nameToCategoryMap[p.name] = p.category; });
 
-        // 2. Filter bills by date
         const filteredBills = rawBills.filter(bill => {
             const billDate = bill.billingDate;
             return (!topProductsStartDate || billDate >= topProductsStartDate) &&
                 (!topProductsEndDate || billDate <= topProductsEndDate);
         });
 
-        // 3. Aggregate product quantities
         filteredBills.forEach(bill => {
             bill.products?.forEach(p => {
                 if (p.name) {
-                    // Use the map here instead of .find()
                     const category = nameToCategoryMap[p.name] || 'Uncategorized';
                     const matchesCategory = topProductsCategory === 'All' || category === topProductsCategory;
-
                     if (matchesCategory) {
                         productMap[p.name] = (productMap[p.name] || 0) + (p.quantity || 0);
                     }
@@ -239,179 +241,215 @@ const Analytics = () => {
             .sort((a, b) => b.quantity - a.quantity);
     }, [rawBills, topProductsStartDate, topProductsEndDate, topProductsCategory, products]);
 
-    const visibleTopProducts = allTopProducts.slice(topProductsIndex, topProductsIndex + pageSize);
+    // SECTION 5: Payment Mode Logic
 
-    const CustomBarTooltip = ({ active, payload }) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="bg-white p-3 shadow-lg rounded-4 border-0" style={{ minWidth: '180px' }}>
-                    <p className="text-uppercase fw-bold text-muted mb-0" style={{ fontSize: '10px', letterSpacing: '0.05em' }}>
-                        Product Details
-                    </p>
-                    <div className="d-flex align-items-center justify-content-between mb-1">
-                        <div className="gap-2">
-                            <div className="rounded-circle" style={{ width: '8px', height: '8px', backgroundColor: payload[0].fill }}></div>
-                            <span className="fw-medium text-dark small">{payload[0].payload.name}</span>
-                        </div>
-                    </div>
-                    <div className="d-flex align-items-center justify-content-between mt-1">
-                        <span className="text-muted small">Units Sold:</span>
-                        <span className="fw-bold text-primary fs-5">
-                            {payload[0].value.toLocaleString()}
-                        </span>
-                    </div>
-                </div>
-            );
-        }
-        return null;
-    };
-
-    const [paymentModeData, setPaymentModeData] = useState([]);
-    const [paymentActiveIndex, setPaymentActiveIndex] = useState(0);
-    const [paymentViewMode, setPaymentViewMode] = useState('chart');
-
+    // Callback
     const processPaymentData = useCallback((bills) => {
         const counts = {};
         bills.forEach(bill => {
             const mode = bill.modeOfPayment || 'Unknown';
             counts[mode] = (counts[mode] || 0) + 1;
         });
-
-        const formatted = Object.keys(counts).map(key => ({
-            name: key,
-            value: counts[key]
-        }));
-        setPaymentModeData(formatted);
+        setPaymentModeData(Object.keys(counts).map(key => ({ name: key, value: counts[key] })));
     }, []);
 
+    const totalTransactions = paymentModeData.reduce((acc, curr) => acc + curr.value, 0);
     const onPaymentPieEnter = (_, index) => setPaymentActiveIndex(index);
 
-    const totalTransactions = paymentModeData.reduce((acc, curr) => acc + curr.value, 0);
     const topPaymentMode = paymentModeData.length > 0
         ? [...paymentModeData].sort((a, b) => b.value - a.value)[0]
         : { name: 'N/A', value: 0 };
 
-    // Product Derived Metrics
-    const totalQtySold = productSalesData.reduce((acc, curr) => acc + curr.quantity, 0);
-    const avgQtyPerPeriod = totalQtySold / (productSalesData.length || 1);
-    const peakQty = productSalesData.length > 0 ? Math.max(...productSalesData.map(d => d.quantity)) : 0;
-    const bestSellerName = getTopSellingProduct(rawBills);
+    // SECTION 6: Market Basket Logic
 
-    const resetProductFilters = () => {
-        setProductStartDate(productMinDate);
-        setProductEndDate(productMaxDate);
-        setProductTimeFrame('daily');
-    };
-
-    const isProductFilterActive =
-        productStartDate !== productMinDate ||
-        productEndDate !== productMaxDate ||
-        productTimeFrame !== 'daily';
-
-    // --- 5. MARKET BASKET ANALYSIS (Frequently Bought Together) ---
     const crossSellData = useMemo(() => {
         const pairCounts = {};
-
         rawBills.forEach(bill => {
             const items = bill.products?.map(p => p.name).filter(Boolean) || [];
             if (items.length < 2) return;
-
-            // Create unique pairs (A + B)
             for (let i = 0; i < items.length; i++) {
                 for (let j = i + 1; j < items.length; j++) {
-                    // Sort names alphabetically so (Bread, Milk) is the same as (Milk, Bread)
                     const pair = [items[i], items[j]].sort();
                     const pairKey = pair.join(' + ');
                     pairCounts[pairKey] = (pairCounts[pairKey] || 0) + 1;
                 }
             }
         });
-
         return Object.entries(pairCounts)
             .map(([pair, count]) => ({ pair, count }))
             .sort((a, b) => b.count - a.count)
-            .slice(0, 10); // Top 10 pairings
+            .slice(0, 10);
     }, [rawBills]);
 
-    // Pagination state for Frequently Bought Together
-    const [pairingIndex, setPairingIndex] = useState(0);
-    const pairingsPerPage = 6;
+    // SECTION 7: Weekday Performance Logic
 
-    // Reset pagination if the raw data changes
+    const weekdayData = useMemo(() => {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const aggregation = days.map(day => ({ day, sales: 0, count: 0 }));
+        const filteredBills = rawBills.filter(bill => {
+            const billDate = bill.billingDate;
+            return (!startDate || billDate >= startDate) && (!endDate || billDate <= endDate);
+        });
+        filteredBills.forEach(bill => {
+            const date = new Date(bill.billingDate);
+            const dayIndex = date.getDay();
+            aggregation[dayIndex].sales += (bill.finalTotal || 0);
+            aggregation[dayIndex].count += 1;
+        });
+        return aggregation;
+    }, [rawBills, startDate, endDate]);
+
+    const peakWeekday = useMemo(() => [...weekdayData].sort((a, b) => b[weekdayMetric] - a[weekdayMetric])[0], [weekdayData, weekdayMetric]);
+
+    // SECTION 8: Delivery Mode Logic
+
+    // Callback
+    const processDeliveryData = useCallback((bills) => {
+        const counts = {};
+        bills.forEach(bill => {
+            const mode = bill.modeOfDelivery || bill.deliveryMode || 'In-Store';
+            counts[mode] = (counts[mode] || 0) + 1;
+        });
+        setDeliveryModeData(Object.keys(counts).map(key => ({ name: key, value: counts[key] })).sort((a, b) => b.value - a.value));
+    }, []);
+
+    const onDeliveryPieEnter = (_, index) => setDeliveryActiveIndex(index);
+
+    const topDeliveryMode = deliveryModeData.length > 0
+        ? [...deliveryModeData].sort((a, b) => b.value - a.value)[0]
+        : { name: 'N/A', value: 0 };
+
+    // SECTION 9: Revenue by Category Logic
+
+    const revenueByCategoryData = useMemo(() => {
+        const revMap = {};
+        const nameToCategoryMap = {};
+        products.forEach(p => { nameToCategoryMap[p.name] = p.category || 'Uncategorized'; });
+        rawBills.forEach(bill => {
+            bill.products?.forEach(p => {
+                if (p.name) {
+                    const category = nameToCategoryMap[p.name] || 'Uncategorized';
+                    const itemRevenue = p.discountedTotal || ((p.quantity || 0) * (p.unitPrice || 0));
+                    revMap[category] = (revMap[category] || 0) + itemRevenue;
+                }
+            });
+        });
+        return Object.entries(revMap)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+    }, [rawBills, products]);
+
+    // LIFECYCLE / FETCHING
+
+    // Side Effects (useEffect)
     useEffect(() => {
-        setPairingIndex(0);
-    }, [rawBills]);
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                const billsQuery = query(collection(db, "bills"), orderBy("billingDate", "asc"));
+                const billSnapshot = await getDocs(billsQuery);
+                const fetchedBills = billSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setRawBills(fetchedBills);
 
+                if (fetchedBills.length > 0) {
+                    const min = fetchedBills[0].billingDate;
+                    const max = fetchedBills[fetchedBills.length - 1].billingDate;
+                    setStartDate(min); setEndDate(max); setAbsMinDate(min); setAbsMaxDate(max);
+                    setProductStartDate(min); setProductEndDate(max); setProductMinDate(min); setProductMaxDate(max);
+                    setTopProductsStartDate(min); setTopProductsEndDate(max);
+
+                    processChartData(fetchedBills, 'daily', min, max);
+                    processPaymentData(fetchedBills);
+                    processDeliveryData(fetchedBills);
+
+                    const names = new Set();
+                    fetchedBills.forEach(b => b.products?.forEach(p => p.name && names.add(p.name)));
+                    setAllProductNames([...names]);
+
+                    const top = getTopSellingProduct(fetchedBills);
+                    if (top) setSelectedProduct(top);
+                }
+                setLastUpdatedRevenue(formatTimestamp());
+
+                const productSnapshot = await getDocs(collection(db, "products"));
+                const fetchedProducts = productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setProducts(fetchedProducts);
+                processCategoryData(fetchedProducts);
+                setLastUpdatedInventory(formatTimestamp());
+
+            } catch (error) { console.error("Error fetching analytics:", error); }
+            finally { setLoading(false); }
+        };
+        fetchData();
+    }, [processChartData, processCategoryData, getTopSellingProduct, processPaymentData, processDeliveryData]);
+
+    useEffect(() => {
+        if (selectedProduct) {
+            processProductSalesData(rawBills, selectedProduct, productTimeFrame, productStartDate, productEndDate);
+        }
+    }, [selectedProduct, productTimeFrame, productStartDate, productEndDate, rawBills, processProductSalesData]);
+
+    useEffect(() => { setPairingIndex(0); }, [rawBills]);
+
+    // Chart Custom Components (Tooltips/Shapes)
+
+    const isProductFilterActive =
+        productStartDate !== productMinDate ||
+        productEndDate !== productMaxDate ||
+        productTimeFrame !== 'daily';
+
+    const visibleTopProducts = allTopProducts.slice(topProductsIndex, topProductsIndex + pageSize);
     const visiblePairings = crossSellData.slice(pairingIndex, pairingIndex + pairingsPerPage);
+    const isDark = document.body.getAttribute('data-theme') === 'dark';
+    const axisColor = isDark ? '#a0aab4' : '#6c757d';
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : '#bababa';
 
-    // --- 6. RENDER HELPERS ---
     const renderActiveShape = (props) => {
         const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value } = props;
-        const isDark = document.body.getAttribute('data-theme') === 'dark';
         const textColor = isDark ? '#f8f9fa' : '#333';
         const subTextColor = isDark ? '#a0aab4' : '#6c757d';
-
-        // Check if the current segment belongs to Payment or Delivery distributions
-        const isPaymentChart = paymentModeData.some(item => item.name === payload.name);
-        const isDeliveryChart = deliveryModeData.some(item => item.name === payload.name);
-
-        // Use "Orders" for logistics/payments, and "Products" for inventory/categories
-        const unitLabel = (isPaymentChart || isDeliveryChart) ? 'Orders' : 'Products';
-
+        const isOrderBased = paymentModeData.some(item => item.name === payload.name) || deliveryModeData.some(item => item.name === payload.name);
+        const unitLabel = isOrderBased ? 'Orders' : 'Products';
         return (
             <g>
-                <text x={cx} y={cy - 10} dy={8} textAnchor="middle" fill={textColor} style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                    {payload.name}
-                </text>
-                <text x={cx} y={cy + 15} dy={8} textAnchor="middle" fill={subTextColor} style={{ fontSize: '14px' }}>
-                    {`${value} ${unitLabel}`}
-                </text>
+                <text x={cx} y={cy - 10} dy={8} textAnchor="middle" fill={textColor} style={{ fontSize: '16px', fontWeight: 'bold' }}>{payload.name}</text>
+                <text x={cx} y={cy + 15} dy={8} textAnchor="middle" fill={subTextColor} style={{ fontSize: '14px' }}>{`${value} ${unitLabel}`}</text>
                 <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 10} startAngle={startAngle} endAngle={endAngle} fill={fill} />
                 <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 12} outerRadius={outerRadius + 15} fill={fill} />
             </g>
         );
     };
 
-    const renderCustomLegend = (props) => {
-        const { payload } = props;
-        return (
-            <div className="ms-4" style={{ width: '320px' }}>
-                <Row className="g-2">
-                    {payload.map((entry, index) => (
-                        <Col xs={6} key={`item-${index}`}>
-                            <div className="d-flex align-items-center mb-1">
-                                <span className="badge rounded-pill shadow-sm d-flex align-items-center justify-content-between w-100"
-                                    style={{ backgroundColor: entry.color, fontSize: '12px', fontWeight: '600', padding: '5px 8px', color: '#fff' }}>
-                                    <span className='ms-2' style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '5px' }}>{entry.value}</span>
-                                    <span className="bg-white text-dark rounded-circle d-flex align-items-center justify-content-center fw-bold"
-                                        style={{ minWidth: '20px', height: '20px', fontSize: '9px', padding: '2px' }}>{entry.payload.value}</span>
-                                </span>
-                            </div>
-                        </Col>
-                    ))}
-                </Row>
-            </div>
-        );
-    };
+    const renderCustomLegend = (props) => (
+        <div className="ms-4" style={{ width: '320px' }}>
+            <Row className="g-2">
+                {props.payload.map((entry, index) => (
+                    <Col xs={6} key={`item-${index}`}>
+                        <div className="d-flex align-items-center mb-1">
+                            <span className="badge rounded-pill shadow-sm d-flex align-items-center justify-content-between w-100"
+                                style={{ backgroundColor: entry.color, fontSize: '12px', fontWeight: '600', padding: '5px 8px', color: '#fff' }}>
+                                <span className='ms-2' style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '5px' }}>{entry.value}</span>
+                                <span className="bg-white text-dark rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                                    style={{ minWidth: '20px', height: '20px', fontSize: '9px', padding: '2px' }}>{entry.payload.value}</span>
+                            </span>
+                        </div>
+                    </Col>
+                ))}
+            </Row>
+        </div>
+    );
 
     const CustomRevenueTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
                 <div className="bg-white p-3 shadow-lg rounded-4 border-0" style={{ minWidth: '180px' }}>
-                    <p className="text-uppercase fw-bold text-muted mb-2" style={{ fontSize: '10px', letterSpacing: '0.05em' }}>
-                        {label}
-                    </p>
+                    <p className="text-uppercase fw-bold text-muted mb-2" style={{ fontSize: '10px' }}>{label}</p>
                     <div className="d-flex align-items-center justify-content-between">
-                        <div className="d-flex align-items-center justify-content-center gap-2">
+                        <div className="d-flex align-items-center gap-2">
                             <div className="rounded-circle" style={{ width: '8px', height: '8px', backgroundColor: '#0d6efd' }}></div>
                             <span className="fw-medium text-dark small">Revenue</span>
                         </div>
-                        <span className="fw-bold text-primary fs-5">
-                            ₹{payload[0].value.toLocaleString('en-IN')}
-                        </span>
-                    </div>
-                    <div className="mt-2 pt-2 border-top border-light">
-                        <small className="text-muted" style={{ fontSize: '9px' }}>Net Earnings</small>
+                        <span className="fw-bold text-primary fs-5">₹{payload[0].value.toLocaleString('en-IN')}</span>
                     </div>
                 </div>
             );
@@ -423,9 +461,7 @@ const Analytics = () => {
         if (active && payload && payload.length) {
             return (
                 <div className="bg-white p-3 shadow-lg rounded-4 border-0" style={{ minWidth: '150px' }}>
-                    <p className="text-uppercase fw-bold text-muted mb-2" style={{ fontSize: '10px', letterSpacing: '0.05em' }}>
-                        {label}
-                    </p>
+                    <p className="text-uppercase fw-bold text-muted mb-2" style={{ fontSize: '10px' }}>{label}</p>
                     <div className="d-flex align-items-center justify-content-between">
                         <div className="d-flex align-items-center gap-2">
                             <div className="rounded-circle" style={{ width: '8px', height: '8px', backgroundColor: '#f59f00' }}></div>
@@ -433,8 +469,21 @@ const Analytics = () => {
                         </div>
                         <span className="fw-bold text-dark fs-5">{payload[0].value}</span>
                     </div>
-                    <div className="mt-2 pt-2 border-top border-light">
-                        <small className="text-muted" style={{ fontSize: '9px' }}>Units move</small>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    const CustomBarTooltip = ({ active, payload }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white p-3 shadow-lg rounded-4 border-0" style={{ minWidth: '180px' }}>
+                    <p className="text-uppercase fw-bold text-muted mb-0" style={{ fontSize: '10px' }}>Product Details</p>
+                    <span className="fw-medium text-dark small">{payload[0].payload.name}</span>
+                    <div className="d-flex align-items-center justify-content-between mt-1">
+                        <span className="text-muted small">Units Sold:</span>
+                        <span className="fw-bold text-primary fs-5">{payload[0].value.toLocaleString()}</span>
                     </div>
                 </div>
             );
@@ -442,124 +491,20 @@ const Analytics = () => {
         return null;
     };
 
-    const isDark = document.body.getAttribute('data-theme') === 'dark';
-    const axisColor = isDark ? '#a0aab4' : '#6c757d';
-    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : '#bababa';
-
-    // --- WEEKDAY PERFORMANCE STATE & LOGIC ---
-    const [weekdayMetric, setWeekdayMetric] = useState('sales'); // 'sales' or 'count'
-
-    const weekdayData = useMemo(() => {
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const aggregation = days.map(day => ({ day, sales: 0, count: 0 }));
-
-        const filteredBills = rawBills.filter(bill => {
-            const billDate = bill.billingDate;
-            return (!startDate || billDate >= startDate) && (!endDate || billDate <= endDate);
-        });
-
-        filteredBills.forEach(bill => {
-            const date = new Date(bill.billingDate);
-            const dayIndex = date.getDay();
-            aggregation[dayIndex].sales += (bill.finalTotal || 0);
-            aggregation[dayIndex].count += 1;
-        });
-
-        return aggregation;
-    }, [rawBills, startDate, endDate]);
-
-    // Determine peak based on selected metric
-    const peakWeekday = [...weekdayData].sort((a, b) => b[weekdayMetric] - a[weekdayMetric])[0];
-
-    // --- 6. DELIVERY MODE STATE & LOGIC ---
-    const [deliveryModeData, setDeliveryModeData] = useState([]);
-    const [deliveryActiveIndex, setDeliveryActiveIndex] = useState(0);
-    const [deliveryViewMode, setDeliveryViewMode] = useState('chart');
-
-    const processDeliveryData = useCallback((bills) => {
-        const counts = {};
-        bills.forEach(bill => {
-            const mode = bill.modeOfDelivery || bill.deliveryMode || 'In-Store';
-
-            counts[mode] = (counts[mode] || 0) + 1;
-        });
-
-        const formatted = Object.keys(counts).map(key => ({
-            name: key,
-            value: counts[key]
-        }));
-
-        setDeliveryModeData(formatted.sort((a, b) => b.value - a.value));
-    }, []);
-
-    const onDeliveryPieEnter = (_, index) => setDeliveryActiveIndex(index);
-
-    const topDeliveryMode = deliveryModeData.length > 0
-        ? [...deliveryModeData].sort((a, b) => b.value - a.value)[0]
-        : { name: 'N/A', value: 0 };
-
-    // DATA FETCHING & SYNC
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                // Fetch Bills
-                const billsQuery = query(collection(db, "bills"), orderBy("billingDate", "asc"));
-                const billSnapshot = await getDocs(billsQuery);
-                const fetchedBills = billSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setRawBills(fetchedBills);
-
-                if (fetchedBills.length > 0) {
-                    const min = fetchedBills[0].billingDate;
-                    const max = fetchedBills[fetchedBills.length - 1].billingDate;
-
-                    // Setup Revenue Filters
-                    setStartDate(min); setEndDate(max); setAbsMinDate(min); setAbsMaxDate(max);
-                    processChartData(fetchedBills, 'daily', min, max);
-
-                    // Setup Product Filters
-                    setProductStartDate(min); setProductEndDate(max);
-                    setProductMinDate(min); setProductMaxDate(max);
-
-                    // Extract Metadata
-                    const names = new Set();
-                    fetchedBills.forEach(b => b.products?.forEach(p => p.name && names.add(p.name)));
-                    setAllProductNames([...names]);
-
-                    const top = getTopSellingProduct(fetchedBills);
-                    if (top) setSelectedProduct(top);
-
-                    processPaymentData(fetchedBills);
-
-                    setTopProductsStartDate(min);
-                    setTopProductsEndDate(max);
-                }
-                setLastUpdatedRevenue(formatTimestamp());
-
-                const productSnapshot = await getDocs(collection(db, "products"));
-                const fetchedProducts = productSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                setProducts(fetchedProducts);
-                processCategoryData(fetchedProducts);
-                setLastUpdatedInventory(formatTimestamp());
-                processDeliveryData(fetchedBills);
-
-            } catch (error) {
-                console.error("Error fetching analytics:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, [processChartData, processCategoryData, getTopSellingProduct, processPaymentData, processDeliveryData]);
-
-    useEffect(() => {
-        if (selectedProduct) {
-            processProductSalesData(rawBills, selectedProduct, productTimeFrame, productStartDate, productEndDate);
+    const CategoryRevenueTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white p-3 shadow-lg rounded-4 border-0" style={{ minWidth: '200px' }}>
+                    <p className="text-uppercase fw-bold text-muted mb-2" style={{ fontSize: '10px' }}>{label}</p>
+                    <div className="d-flex align-items-center justify-content-between">
+                        <span className="fw-medium text-dark small">Total Revenue</span>
+                        <span className="fw-bold text-primary fs-5">₹{payload[0].value.toLocaleString('en-IN')}</span>
+                    </div>
+                </div>
+            );
         }
-    }, [selectedProduct, productTimeFrame, productStartDate, productEndDate, rawBills, processProductSalesData]);
+        return null;
+    };
 
     return (
         <Container fluid className="py-4">
@@ -1462,6 +1407,7 @@ const Analytics = () => {
                     <small className="text-muted float-end fst-italic">Last Updated: {lastUpdatedRevenue}</small>
                 </Card.Footer>
             </Card>
+
             {/* SECTION: DELIVERY MODE DISTRIBUTION */}
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
                 <Card.Header className="bg-white border-bottom py-3 px-4">
@@ -1593,6 +1539,162 @@ const Analytics = () => {
                     </Row>
                 </Card.Body>
             </Card>
+
+            <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+                <Card.Header className="bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-2">
+                        <BiSolidCategory className="text-primary" size={24} />
+                        <h5 className="mb-0 fw-bold">Revenue by Category</h5>
+                    </div>
+                    {/* View Toggle Buttons */}
+                    <div className="btn-group shadow-sm" role="group">
+                        <Button
+                            variant={revenueCatViewMode === 'chart' ? 'primary' : 'outline-primary'}
+                            size="sm"
+                            onClick={() => setRevenueCatViewMode('chart')}
+                            className="d-flex align-items-center gap-1"
+                        >
+                            <MdBarChart /> Chart
+                        </Button>
+                        <Button
+                            variant={revenueCatViewMode === 'table' ? 'primary' : 'outline-primary'}
+                            size="sm"
+                            onClick={() => setRevenueCatViewMode('table')}
+                            className="d-flex align-items-center gap-1"
+                        >
+                            <MdTableRows /> Table
+                        </Button>
+                    </div>
+                </Card.Header>
+                <Card.Body className="p-4 bg-light bg-opacity-10">
+                    {revenueCatViewMode === 'chart' ? (
+                        <Row className="g-4">
+                            <Col lg={8}>
+                                <Card className="border-0 shadow-sm rounded-3 p-3 bg-white">
+                                    <div style={{ width: '100%', height: '350px' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={revenueByCategoryData} layout="vertical" margin={{ left: 30, right: 30 }}>
+                                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#eee" />
+                                                <XAxis type="number" hide />
+                                                <YAxis
+                                                    dataKey="name"
+                                                    type="category"
+                                                    tick={{ fontSize: 12, fontWeight: 500 }}
+                                                    width={100}
+                                                    axisLine={false}
+                                                    tickLine={false}
+                                                />
+                                                <RechartsTooltip content={<CategoryRevenueTooltip />} />
+                                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={25}>
+                                                    {revenueByCategoryData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </Card>
+                            </Col>
+                            <Col lg={4}>
+                                <div className="d-flex flex-column gap-3">
+                                    <h6 className="small fw-bold text-muted text-uppercase mb-1" style={{ letterSpacing: '0.05em' }}>
+                                        Top Revenue Drivers
+                                    </h6>
+                                    {revenueByCategoryData.slice(0, 3).map((item, idx) => {
+                                        // Calculate percentage contribution for this specific category
+                                        const percentage = ((item.value / (totalRevenue || 1)) * 100).toFixed(1);
+
+                                        return (
+                                            <div key={idx} className="p-3 bg-white rounded-4 border-0 shadow-sm position-relative overflow-hidden hover-lift transition-all">
+                                                {/* Decorative colored accent based on rank */}
+                                                <div
+                                                    className="position-absolute top-0 start-0 h-100"
+                                                    style={{ width: '4px', backgroundColor: COLORS[idx % COLORS.length] }}
+                                                ></div>
+
+                                                <div className="ms-2">
+                                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                                        <div>
+                                                            <span className="badge bg-light text-dark rounded-pill border mb-2" style={{ fontSize: '0.65rem' }}>
+                                                                RANK #{idx + 1}
+                                                            </span>
+                                                            <h6 className="mb-0 fw-bold text-dark">{item.name}</h6>
+                                                        </div>
+                                                        <div className="text-end">
+                                                            <h5 className="text-primary fw-bold mb-0">
+                                                                ₹{item.value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                                                            </h5>
+                                                            <small className="text-success fw-bold" style={{ fontSize: '0.75rem' }}>
+                                                                {percentage}% Share
+                                                            </small>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Visual Progress Bar to show market depth */}
+                                                    <div className="mt-3">
+                                                        <div className="d-flex justify-content-between mb-1" style={{ fontSize: '0.7rem' }}>
+                                                            <span className="text-muted">Revenue Target Impact</span>
+                                                            <span className="fw-bold">{percentage}%</span>
+                                                        </div>
+                                                        <div className="progress" style={{ height: '6px', borderRadius: '10px', backgroundColor: '#f0f0f0' }}>
+                                                            <div
+                                                                className="progress-bar"
+                                                                role="progressbar"
+                                                                style={{
+                                                                    width: `${percentage}%`,
+                                                                    backgroundColor: COLORS[idx % COLORS.length],
+                                                                    borderRadius: '10px'
+                                                                }}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </Col>
+                        </Row>
+                    ) : (
+                        /* Table View */
+                        <Card className="border-0 shadow-sm rounded-3 overflow-hidden">
+                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                <Table hover responsive className="align-middle mb-0 border-light text-center">
+                                    <thead className="bg-light sticky-top">
+                                        <tr>
+                                            <th className="small text-muted border-0">Rank</th>
+                                            <th className="small text-muted border-0 text-start ps-4">Category Name</th>
+                                            <th className="small text-muted border-0">Total Revenue</th>
+                                            <th className="small text-muted border-0">Contribution (%)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {revenueByCategoryData.map((row, idx) => {
+                                            const percentage = ((row.value / (totalRevenue || 1)) * 100).toFixed(1);
+                                            return (
+                                                <tr key={idx}>
+                                                    <td>{idx + 1}</td>
+                                                    <td className="fw-bold text-start ps-4">{row.name}</td>
+                                                    <td className="text-primary fw-bold">₹{row.value.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                                    <td>
+                                                        <div className="d-flex align-items-center justify-content-center gap-2">
+                                                            <div className="progress w-50" style={{ height: '6px' }}>
+                                                                <div className="progress-bar" style={{ width: `${percentage}%`, backgroundColor: COLORS[idx % COLORS.length] }}></div>
+                                                            </div>
+                                                            <span className="small text-muted">{percentage}%</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </Table>
+                            </div>
+                        </Card>
+                    )}
+                </Card.Body>
+            </Card>
+
         </Container>
     );
 };
