@@ -513,7 +513,7 @@ const Analytics = () => {
                 <p className="text-muted small">Comprehensive analysis of revenue and inventory.</p>
             </div>
 
-            {/* SECTION 1: REVENUE REPORT CARD */}
+            {/* SECTION: REVENUE REPORT CARD */}
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
                 <Card.Header className="bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center gap-2">
@@ -608,7 +608,7 @@ const Analytics = () => {
                 </Card.Footer>
             </Card>
 
-            {/* SECTION 2: INVENTORY DISTRIBUTION CARD */}
+            {/* SECTION: INVENTORY DISTRIBUTION CARD */}
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
                 <Card.Header className="bg-white border-bottom py-3 px-4">
                     <div className="d-flex align-items-center gap-2">
@@ -733,7 +733,7 @@ const Analytics = () => {
                 </Card.Footer>
             </Card>
 
-            {/* SECTION 3: PRODUCT SALES ANALYTICS */}
+            {/* SECTION: PRODUCT SALES ANALYTICS */}
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
                 <Card.Header className="bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center gap-2">
@@ -860,7 +860,7 @@ const Analytics = () => {
                 </Card.Footer>
             </Card>
 
-            {/* SECTION 4: TOP SELLING PRODUCTS BAR CHART */}
+            {/* SECTION: TOP SELLING PRODUCTS BAR CHART */}
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
                 <Card.Header className="bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center gap-2">
@@ -1051,7 +1051,7 @@ const Analytics = () => {
                 </Card.Footer>
             </Card>
 
-            {/* SECTION 5: PAYMENT MODE DISTRIBUTION */}
+            {/* SECTION: PAYMENT MODE DISTRIBUTION */}
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
                 <Card.Header className="bg-white border-bottom py-3 px-4">
                     <div className="d-flex align-items-center gap-2">
@@ -1201,7 +1201,7 @@ const Analytics = () => {
                 </Card.Footer>
             </Card>
 
-            {/* SECTION 6: PRODUCT PAIRING (Market Basket Analysis) */}
+            {/* SECTION: PRODUCT PAIRING (Market Basket Analysis) */}
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
                 <Card.Header className="bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center gap-2">
@@ -1540,6 +1540,7 @@ const Analytics = () => {
                 </Card.Body>
             </Card>
 
+            {/* SECTION: Revenue by Category */}
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
                 <Card.Header className="bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center gap-2">
@@ -1584,7 +1585,7 @@ const Analytics = () => {
                                                     axisLine={false}
                                                     tickLine={false}
                                                 />
-                                                <RechartsTooltip content={<CategoryRevenueTooltip />} />
+                                                <RechartsTooltip cursor={{ fill: 'rgba(0, 0, 0, 0.03)' }} content={<CategoryRevenueTooltip />} />
                                                 <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={25}>
                                                     {revenueByCategoryData.map((entry, index) => (
                                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

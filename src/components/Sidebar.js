@@ -1,24 +1,20 @@
-import React, { useState, useEffect } from 'react';
+// React
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { OverlayTrigger, Tooltip, Modal, Button } from 'react-bootstrap'; // Added Modal and Button
+
+// Bootstrap
+import { OverlayTrigger, Tooltip, Modal, Button } from 'react-bootstrap';
+
+// Contexts
 import { useAuth } from '../context/AuthContext';
 
-// Import New CSS
+// Custom CSS
 import '../css/Sidebar.css';
 
-// Import React Icons
+// Icons
 import {
-    MdDashboard,
-    MdShoppingBag,
-    MdReceiptLong,
-    MdHistoryEdu,
-    MdInsights,
-    MdPeople,
-    MdChevronLeft,
-    MdChevronRight,
-    MdLogout,
-    MdWarning,
-    MdOutlineSettingsSuggest
+    MdDashboard, MdShoppingBag, MdReceiptLong, MdHistoryEdu, MdInsights,
+    MdPeople, MdChevronLeft, MdChevronRight, MdLogout, MdWarning, MdOutlineSettingsSuggest
 } from 'react-icons/md';
 
 // Logo and Icon

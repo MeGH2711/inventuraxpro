@@ -1,7 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+// React
+import { useState, useEffect, useCallback } from 'react';
+
+// Firebase
 import { db } from '../firebaseConfig';
 import { collection, getDocs, setDoc, deleteDoc, doc, query } from 'firebase/firestore';
+
+// Bootstrap
 import { Container, Card, Table, Button, Form, InputGroup, Badge, Toast, ToastContainer } from 'react-bootstrap';
+
+// Icons
 import { MdSecurity, MdPersonAdd, MdDelete, MdVerifiedUser, MdOutlineMail } from 'react-icons/md';
 
 const AccountSecurity = () => {

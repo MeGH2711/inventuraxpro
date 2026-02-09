@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import { AuthProvider } from "./context/AuthContext"; import { ThemeProvider } from "./context/ThemeContext";
+import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import PrivateRoute from "./components/PrivateRoute";
 
 // Pages
@@ -16,16 +17,20 @@ import Billing from "./pages/Billing";
 import BillLogs from "./pages/BillLogs";
 import Analytics from "./pages/Analytics";
 import Customers from "./pages/Customers";
+import MarketingLanding from "./pages/MarketingLanding";
 
 import './css/style.css';
 
-// 1. Updated Layout component to handle dynamic titles
 const Layout = ({ children }) => {
   const location = useLocation();
+  const currentPath = location.pathname;
+
+  // Check if current page is the marketing page
+  const isMarketingPage = currentPath === '/';
 
   useEffect(() => {
-    // Define your route-to-title mapping
     const titleMap = {
+      '/login': 'Login | Inventurax',
       '/dashboard': 'Dashboard | Inventurax',
       '/products': 'Products | Inventurax',
       '/setting': 'Settings | Inventurax',
@@ -35,23 +40,50 @@ const Layout = ({ children }) => {
       '/billlogs': 'Bill Logs | Inventurax',
       '/analytics': 'Analytics | Inventurax',
       '/customers': 'Customers | Inventurax',
+      '/marketing': 'Marketing | Inventurax',
     };
-
-    // Handle dynamic routes (like IDs) or static mapping
-    const currentPath = location.pathname;
 
     if (currentPath.startsWith('/view/invoice/')) {
       document.title = 'Preview Bill | Inventurax';
     } else {
       document.title = titleMap[currentPath] || 'Inventurax';
     }
-  }, [location]);
+  }, [location, currentPath]);
+
+  // If it's the marketing page, return children without Sidebar or Admin Footer
+  if (isMarketingPage) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="d-flex">
       <Sidebar />
       <div id="mainPageContent" className="flex-grow-1">
-        {children}
+        <div className="flex-grow-1">
+          {children}
+        </div>
+
+        <footer className="main-footer">
+          <div className="footer-content">
+            <div className="copyright">
+              © {new Date().getFullYear()} <span className="fw-bold">Inventurax</span>. All rights reserved.
+            </div>
+            <div className="credits">
+              Designed & Developed by{' '}
+              <a
+                href="https://meghportfolio.netlify.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="developer-credit"
+              >
+                Megh Patel
+              </a>
+            </div>
+            <div className="footer-version">
+              v1.0.2
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );
@@ -63,29 +95,25 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
-            <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/view/invoice/:id" element={<PublicBill />} />
-
-            {/* 2. Wrap all protected routes in a way that Sidebar stays put */}
+            <Route path="/" element={<MarketingLanding />} />
             <Route
               path="/*"
               element={
                 <PrivateRoute>
                   <Layout>
                     <Routes>
+                      <Route path="/login" element={<Navigate to="/dashboard" />} />
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/products" element={<Products />} />
-
-                      <Route path="/setting" element={<Setting />} />
-                      <Route path="/setting/company" element={<CompanyDetails />} />
-                      <Route path="/setting/security" element={<AccountSecurity />} />
-
                       <Route path="/billing" element={<Billing />} />
                       <Route path="/billlogs" element={<BillLogs />} />
                       <Route path="/analytics" element={<Analytics />} />
                       <Route path="/customers" element={<Customers />} />
-
-                      <Route path="/" element={<Navigate to="/dashboard" />} />
+                      <Route path="/setting" element={<Setting />} />
+                      <Route path="/setting/company" element={<CompanyDetails />} />
+                      <Route path="/setting/security" element={<AccountSecurity />} />
                     </Routes>
                   </Layout>
                 </PrivateRoute>
