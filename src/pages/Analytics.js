@@ -22,9 +22,6 @@ import {
 } from 'react-icons/md';
 import { BiSolidCategory } from "react-icons/bi";
 
-// Global Constants & Static Helpers
-const COLORS = ['#0d6efd', '#198754', '#ffc107', '#fd7e14', '#dc3545', '#6610f2', '#6f42c1'];
-
 const formatDateLabel = (dateObj) => {
     return dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
@@ -44,6 +41,26 @@ const timeFrameLabels = {
 };
 
 const Analytics = () => {
+
+    // Themes
+    const [isDark, setIsDark] = useState(document.body.getAttribute('data-theme') === 'dark');
+
+    useEffect(() => {
+        const observer = new MutationObserver(() => {
+            const dark = document.body.getAttribute('data-theme') === 'dark';
+            setIsDark(dark);
+        });
+
+        observer.observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
+        return () => observer.disconnect();
+    }, []);
+
+    const themeColors = useMemo(() => {
+        return isDark
+            ? ['#3d8bfd', '#2fb380', '#ffcd39', '#fe9e46', '#ea868f', '#a370f7', '#b692f6'] // Dark
+            : ['#0d6efd', '#198754', '#ffc107', '#fd7e14', '#dc3545', '#6610f2', '#6f42c1']; // Light
+    }, [isDark]);
+
     // Shared / Core States
     const [loading, setLoading] = useState(true);
     const [rawBills, setRawBills] = useState([]);
@@ -339,6 +356,35 @@ const Analytics = () => {
             .sort((a, b) => b.value - a.value);
     }, [rawBills, products]);
 
+    // SECTION 10: Customer Loyalty Logic
+
+    const customerMetrics = useMemo(() => {
+        const customerMap = {};
+
+        rawBills.forEach(bill => {
+            const name = bill.customerName || 'Walk-in Customer';
+            if (!customerMap[name]) {
+                customerMap[name] = { name, totalSpend: 0, orderCount: 0 };
+            }
+            customerMap[name].totalSpend += (bill.finalTotal || 0);
+            customerMap[name].orderCount += 1;
+        });
+
+        const customers = Object.values(customerMap);
+        const repeatCustomers = customers.filter(c => c.orderCount > 1).length;
+        const newCustomers = customers.length - repeatCustomers;
+
+        return {
+            topCustomers: customers.sort((a, b) => b.totalSpend - a.totalSpend).slice(0, 10),
+            loyaltyData: [
+                { name: 'Repeat Customers', value: repeatCustomers },
+                { name: 'One-time Shoppers', value: newCustomers }
+            ],
+            aov: totalRevenue / (rawBills.length || 1),
+            totalUnique: customers.length
+        };
+    }, [rawBills, totalRevenue]);
+
     // LIFECYCLE / FETCHING
 
     // Side Effects (useEffect)
@@ -400,7 +446,6 @@ const Analytics = () => {
 
     const visibleTopProducts = allTopProducts.slice(topProductsIndex, topProductsIndex + pageSize);
     const visiblePairings = crossSellData.slice(pairingIndex, pairingIndex + pairingsPerPage);
-    const isDark = document.body.getAttribute('data-theme') === 'dark';
     const axisColor = isDark ? '#a0aab4' : '#6c757d';
     const gridColor = isDark ? 'rgba(255,255,255,0.1)' : '#bababa';
 
@@ -499,6 +544,26 @@ const Analytics = () => {
                     <div className="d-flex align-items-center justify-content-between">
                         <span className="fw-medium text-dark small">Total Revenue</span>
                         <span className="fw-bold text-primary fs-5">₹{payload[0].value.toLocaleString('en-IN')}</span>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    const CustomCustomerTooltip = ({ active, payload }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white p-3 shadow-lg rounded-4 border-0" style={{ minWidth: '180px' }}>
+                    <p className="text-uppercase fw-bold text-muted mb-2" style={{ fontSize: '10px' }}>
+                        Customer Segment
+                    </p>
+                    <div className="d-flex align-items-center justify-content-between">
+                        <div className="d-flex align-items-center gap-2">
+                            <div className="rounded-circle" style={{ width: '8px', height: '8px', backgroundColor: payload[0].payload.name === 'Repeat Customers' ? '#0d6efd' : '#e9ecef' }}></div>
+                            <span className="fw-medium text-dark small">{payload[0].name}</span>
+                        </div>
+                        <span className="fw-bold text-primary fs-5">{payload[0].value}</span>
                     </div>
                 </div>
             );
@@ -673,7 +738,7 @@ const Analytics = () => {
                                                         onMouseEnter={onPieEnter}
                                                     >
                                                         {categoryData.map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                            <Cell key={`cell-${index}`} fill={themeColors[index % themeColors.length]} />
                                                         ))}
                                                     </Pie>
                                                     <Legend verticalAlign="middle" align="right" layout="vertical" content={renderCustomLegend} />
@@ -699,7 +764,7 @@ const Analytics = () => {
                                                                 <td className="fw-medium text-start ps-4">
                                                                     <span
                                                                         className="d-inline-block rounded-circle me-2"
-                                                                        style={{ width: '10px', height: '10px', backgroundColor: COLORS[idx % COLORS.length] }}
+                                                                        style={{ width: '10px', height: '10px', backgroundColor: themeColors[idx % themeColors.length] }}
                                                                     ></span>
                                                                     {row.name}
                                                                 </td>
@@ -710,7 +775,7 @@ const Analytics = () => {
                                                                             <div
                                                                                 className="progress-bar"
                                                                                 role="progressbar"
-                                                                                style={{ width: `${percentage}%`, backgroundColor: COLORS[idx % COLORS.length] }}
+                                                                                style={{ width: `${percentage}%`, backgroundColor: themeColors[idx % themeColors.length] }}
                                                                             ></div>
                                                                         </div>
                                                                         <span className="small text-muted">{percentage}%</span>
@@ -1011,7 +1076,7 @@ const Analytics = () => {
                                             <RechartsTooltip cursor={{ fill: 'rgba(0, 0, 0, 0.03)' }} content={<CustomBarTooltip />} />
                                             <Bar dataKey="quantity" radius={[4, 4, 0, 0]} barSize={40}>
                                                 {visibleTopProducts.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[(topProductsIndex + index) % COLORS.length]} />
+                                                    <Cell key={`cell-${index}`} fill={themeColors[(topProductsIndex + index) % themeColors.length]} />
                                                 ))}
                                             </Bar>
                                         </BarChart>
@@ -1136,7 +1201,7 @@ const Analytics = () => {
                                                         onMouseEnter={onPaymentPieEnter}
                                                     >
                                                         {paymentModeData.map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                            <Cell key={`cell-${index}`} fill={themeColors[index % themeColors.length]} />
                                                         ))}
                                                     </Pie>
                                                     <Legend
@@ -1167,7 +1232,7 @@ const Analytics = () => {
                                                                 <td className="fw-medium text-start ps-4">
                                                                     <span
                                                                         className="d-inline-block rounded-circle me-2"
-                                                                        style={{ width: '10px', height: '10px', backgroundColor: COLORS[idx % COLORS.length] }}
+                                                                        style={{ width: '10px', height: '10px', backgroundColor: themeColors[idx % themeColors.length] }}
                                                                     ></span>
                                                                     {row.name}
                                                                 </td>
@@ -1178,7 +1243,7 @@ const Analytics = () => {
                                                                             <div
                                                                                 className="progress-bar"
                                                                                 role="progressbar"
-                                                                                style={{ width: `${percentage}%`, backgroundColor: COLORS[idx % COLORS.length] }}
+                                                                                style={{ width: `${percentage}%`, backgroundColor: themeColors[idx % themeColors.length] }}
                                                                             ></div>
                                                                         </div>
                                                                         <span className="small text-muted">{percentage}%</span>
@@ -1480,7 +1545,7 @@ const Analytics = () => {
                                                         onMouseEnter={onDeliveryPieEnter}
                                                     >
                                                         {deliveryModeData.map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
+                                                            <Cell key={`cell-${index}`} fill={themeColors[(index + 3) % themeColors.length]} />
                                                         ))}
                                                     </Pie>
                                                     <Legend verticalAlign="middle" align="right" layout="vertical" content={renderCustomLegend} />
@@ -1505,7 +1570,7 @@ const Analytics = () => {
                                                                 <td className="fw-medium text-start ps-4">
                                                                     <span
                                                                         className="d-inline-block rounded-circle me-2"
-                                                                        style={{ width: '10px', height: '10px', backgroundColor: COLORS[(idx + 3) % COLORS.length] }}
+                                                                        style={{ width: '10px', height: '10px', backgroundColor: themeColors[(idx + 3) % themeColors.length] }}
                                                                     ></span>
                                                                     {row.name}
                                                                 </td>
@@ -1519,7 +1584,7 @@ const Analytics = () => {
                                                                                 role="progressbar"
                                                                                 style={{
                                                                                     width: `${percentage}%`,
-                                                                                    backgroundColor: COLORS[(idx + 3) % COLORS.length]
+                                                                                    backgroundColor: themeColors[(idx + 3) % themeColors.length]
                                                                                 }}
                                                                             ></div>
                                                                         </div>
@@ -1588,7 +1653,7 @@ const Analytics = () => {
                                                 <RechartsTooltip cursor={{ fill: 'rgba(0, 0, 0, 0.03)' }} content={<CategoryRevenueTooltip />} />
                                                 <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={25}>
                                                     {revenueByCategoryData.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                        <Cell key={`cell-${index}`} fill={themeColors[index % themeColors.length]} />
                                                     ))}
                                                 </Bar>
                                             </BarChart>
@@ -1610,7 +1675,7 @@ const Analytics = () => {
                                                 {/* Decorative colored accent based on rank */}
                                                 <div
                                                     className="position-absolute top-0 start-0 h-100"
-                                                    style={{ width: '4px', backgroundColor: COLORS[idx % COLORS.length] }}
+                                                    style={{ width: '4px', backgroundColor: themeColors[idx % themeColors.length] }}
                                                 ></div>
 
                                                 <div className="ms-2">
@@ -1643,7 +1708,7 @@ const Analytics = () => {
                                                                 role="progressbar"
                                                                 style={{
                                                                     width: `${percentage}%`,
-                                                                    backgroundColor: COLORS[idx % COLORS.length],
+                                                                    backgroundColor: themeColors[idx % themeColors.length],
                                                                     borderRadius: '10px'
                                                                 }}
                                                             ></div>
@@ -1680,7 +1745,7 @@ const Analytics = () => {
                                                     <td>
                                                         <div className="d-flex align-items-center justify-content-center gap-2">
                                                             <div className="progress w-50" style={{ height: '6px' }}>
-                                                                <div className="progress-bar" style={{ width: `${percentage}%`, backgroundColor: COLORS[idx % COLORS.length] }}></div>
+                                                                <div className="progress-bar" style={{ width: `${percentage}%`, backgroundColor: themeColors[idx % themeColors.length] }}></div>
                                                             </div>
                                                             <span className="small text-muted">{percentage}%</span>
                                                         </div>
@@ -1693,6 +1758,93 @@ const Analytics = () => {
                             </div>
                         </Card>
                     )}
+                </Card.Body>
+            </Card>
+
+            {/* SECTION: CUSTOMER LOYALTY & RETENTION */}
+            <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+                <Card.Header className="bg-white border-bottom py-3 px-4">
+                    <div className="d-flex align-items-center gap-2">
+                        <MdAnalytics className="text-dark" size={24} />
+                        <h5 className="mb-0 fw-bold">Customer Loyalty & Behavior</h5>
+                    </div>
+                </Card.Header>
+                <Card.Body className="p-4 bg-light bg-opacity-10">
+                    <Row className="g-4 mb-4">
+                        <Col md={4}>
+                            <SalesStat title="Average Order Value" value={customerMetrics.aov} icon={<MdReceipt />} color="dark" />
+                        </Col>
+                        <Col md={4}>
+                            <InventoryStat
+                                title="Retention Rate"
+                                value={`${((customerMetrics.loyaltyData[0].value / (customerMetrics.totalUnique || 1)) * 100).toFixed(1)}%`}
+                                subtitle="Customers with 2+ visits" icon={<MdTrendingUp />} color="info" isNumeric={false}
+                            />
+                        </Col>
+                        <Col md={4}>
+                            <InventoryStat title="Total Reach" value={customerMetrics.totalUnique} subtitle="Unique customers served" icon={<MdLayers />} color="primary" />
+                        </Col>
+                    </Row>
+
+                    <Row className="g-4">
+                        <Col lg={5}>
+                            <Card className="border-0 shadow-sm rounded-3 p-3 h-100">
+                                <span className="fw-bold small text-uppercase text-muted mb-3 d-block">Retention Breakdown</span>
+                                <div style={{ width: '100%', height: '300px' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={customerMetrics.loyaltyData}
+                                                innerRadius={60}
+                                                outerRadius={100}
+                                                paddingAngle={5}
+                                                dataKey="value"
+                                            >
+                                                {customerMetrics.loyaltyData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={themeColors[index % themeColors.length]} />
+                                                ))}
+                                            </Pie>
+                                            <RechartsTooltip content={<CustomCustomerTooltip />} />
+                                            <Legend verticalAlign="bottom" />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </Card>
+                        </Col>
+
+                        <Col lg={7}>
+                            <Card className="border-0 shadow-sm rounded-3 p-3 h-100">
+                                <span className="fw-bold small text-uppercase text-muted mb-3 d-block">Top 10 High-Value Customers</span>
+                                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                    <Table hover responsive className="align-middle border-light">
+                                        <thead className="bg-light sticky-top">
+                                            <tr className="text-center">
+                                                <th className="small text-muted border-0 text-start">Customer</th>
+                                                <th className="small text-muted border-0">Orders</th>
+                                                <th className="small text-muted border-0 text-end">Total Spend</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {customerMetrics.topCustomers.map((c, idx) => (
+                                                <tr className="text-center" key={idx}>
+                                                    <td className="fw-medium text-start">
+                                                        <div className="d-flex align-items-center gap-2">
+                                                            <div className="bg-light rounded-circle p-2 text-primary small fw-bold" style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                {c.name.charAt(0)}
+                                                            </div>
+                                                            {c.name}
+                                                        </div>
+                                                    </td>
+                                                    <td><span className="badge bg-light text-dark">{c.orderCount}</span></td>
+                                                    <td className="fw-bold text-primary text-end">₹{c.totalSpend.toLocaleString('en-IN')}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                            </Card>
+                        </Col>
+                    </Row>
                 </Card.Body>
             </Card>
 

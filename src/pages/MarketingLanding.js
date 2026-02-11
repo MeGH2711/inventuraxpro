@@ -338,9 +338,27 @@ const MarketingLanding = () => {
             <footer className="py-5 text-center">
                 <Container>
                     <div className="mono-text mb-3">VERSION 1.0.2 STABLE</div>
-                    <div className="opacity-25 small">
-                        Developed by Megh Patel<br />
-                        InventuraX System Architecture &copy; 2026
+                    <div className="small">
+                        <span className="opacity-25">
+                            Developed by{' '}
+                        </span>
+                        <a
+                            href="meghportfolio.netlify.app"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                color: '#ffffff',
+                                opacity: '0.7',
+                                textDecoration: 'none',
+                                transition: 'opacity 0.3s'
+                            }}
+                            onMouseOver={(e) => e.target.style.opacity = '1'}
+                            onMouseOut={(e) => e.target.style.opacity = '0.7'}
+                        >
+                            Megh Patel
+                        </a>
+                        <br />
+                        <span className='opacity-25'>InventuraX System Architecture &copy; 2026</span>
                     </div>
                 </Container>
             </footer>

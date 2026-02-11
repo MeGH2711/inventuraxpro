@@ -495,7 +495,6 @@ body {
 
 .main-footer {
   margin-top: auto;
-  /* Pushes footer to bottom of flex container */
   padding: 1.5rem 0;
   border-top: 1px solid rgba(0, 0, 0, 0.05);
   font-family: 'Montserrat', sans-serif;
