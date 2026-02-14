@@ -11,7 +11,7 @@ import { Toast, ToastContainer, Button } from 'react-bootstrap';
 
 // Icons
 import { FcGoogle } from 'react-icons/fc';
-import { MdRocketLaunch } from 'react-icons/md';
+import { MdRocketLaunch, MdShield } from 'react-icons/md';
 
 // Context
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +26,7 @@ const Login = () => {
 
     const [showError, setShowError] = useState(false);
     const [errorMessage, setErrorMessage] = useState("Invalid username or password.");
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -38,6 +39,7 @@ const Login = () => {
     }, [user, navigate, location]);
 
     const handleGoogleLogin = async () => {
+        setIsAuthenticating(true);
         try {
             const result = await loginWithGoogle();
             const email = result.user.email;
@@ -55,6 +57,8 @@ const Login = () => {
         } catch (error) {
             setErrorMessage("Authentication failed.");
             setShowError(true);
+        } finally {
+            setIsAuthenticating(false);
         }
     };
 
@@ -138,48 +142,109 @@ const Login = () => {
                     gap: 8px;
                 }
 
-                /* Right Side: Action */
+                /* Right Side Redesign: Action */
                 .login-right-panel {
                     flex: 1;
-                    background: rgba(255, 255, 255, 0.02);
+                    background: radial-gradient(circle at center, rgba(108, 92, 231, 0.05) 0%, transparent 70%);
                     padding: 60px;
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
                     align-items: center;
                     text-align: center;
+                    position: relative;
                 }
 
-                .google-auth-btn {
-                    background: #fff;
-                    color: #000;
-                    border: none;
+                .login-form-container {
                     width: 100%;
-                    padding: 18px;
-                    border-radius: 16px;
-                    font-weight: 600;
-                    font-size: 1.1rem;
+                    max-width: 320px;
+                }
+
+                .auth-icon-circle {
+                    width: 64px;
+                    height: 64px;
+                    background: rgba(108, 92, 231, 0.1);
+                    border: 1px solid rgba(108, 92, 231, 0.2);
+                    border-radius: 20px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    gap: 15px;
-                    transition: all 0.3s ease;
-                    cursor: pointer;
+                    margin: 0 auto;
+                    transition: transform 0.3s ease;
                 }
 
-                .google-auth-btn:hover {
-                    transform: translateY(-3px);
-                    box-shadow: 0 15px 30px rgba(255,255,255,0.1);
-                    background: #f8f9fa;
-                }
-
-                .security-badge-v2 {
-                    background: rgba(255,255,255,0.03);
-                    border-radius: 20px;
-                    padding: 20px;
-                    margin-top: 40px;
-                    border: 1px dashed rgba(255,255,255,0.1);
+                .google-auth-btn-v2 {
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    color: #fff;
                     width: 100%;
+                    padding: 12px;
+                    border-radius: 14px;
+                    font-weight: 500;
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    cursor: pointer;
+                    position: relative;
+                    overflow: hidden;
+                }
+
+                .google-auth-btn-v2:hover:not(:disabled) {
+                    background: rgba(255, 255, 255, 0.08);
+                    border-color: rgba(255, 255, 255, 0.2);
+                    transform: translateY(-2px);
+                }
+
+                .google-auth-btn-v2:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
+
+                .google-icon-wrapper {
+                    background: #fff;
+                    padding: 8px;
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .btn-text {
+                    flex-grow: 1;
+                    text-align: left;
+                    font-size: 0.95rem;
+                    letter-spacing: 0.3px;
+                }
+
+                .security-status {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    padding: 10px;
+                }
+
+                .status-indicator {
+                    width: 6px;
+                    height: 6px;
+                    background: #00ff88;
+                    border-radius: 50%;
+                    box-shadow: 0 0 10px #00ff88;
+                    animation: pulse 2s infinite;
+                }
+
+                .status-text {
+                    font-size: 0.65rem;
+                    color: rgba(255,255,255,0.4);
+                    font-weight: 600;
+                    letter-spacing: 1px;
+                }
+
+                @keyframes pulse {
+                    0% { opacity: 0.4; }
+                    50% { opacity: 1; }
+                    100% { opacity: 0.4; }
                 }
 
                 @media (max-width: 850px) {
@@ -210,20 +275,41 @@ const Login = () => {
                     </div>
                 </div>
 
-                {/* Interaction Panel */}
+                {/* Redesigned Interaction Panel */}
                 <div className="login-right-panel">
-                    <div className="mb-4">
-                        <h3 className="text-white fw-bold mb-2">Gatekeeper</h3>
-                        <p className="text-white-50">Identity verification required to access the console.</p>
+                    <div className="login-form-container">
+                        <div className="mb-5">
+                            <div className="auth-icon-circle mb-3">
+                                <MdShield size={32} color="#a29bfe" />
+                            </div>
+                            <h3 className="text-white fw-bold mb-2">System Access</h3>
+                            <p className="text-white-50 small">
+                                Authorized personnel only. <br />
+                                Verify your identity to access the console.
+                            </p>
+                        </div>
+
+                        <button
+                            className="google-auth-btn-v2"
+                            onClick={handleGoogleLogin}
+                            disabled={isAuthenticating}
+                        >
+                            <div className="google-icon-wrapper">
+                                <FcGoogle size={24} />
+                            </div>
+                            <span className="btn-text">
+                                {isAuthenticating ? 'Authenticating...' : 'Continue with Google'}
+                            </span>
+                        </button>
+
+                        <div className="security-status mt-4">
+                            <div className="status-indicator"></div>
+                            <span className="status-text">ENCRYPTED END-TO-END</span>
+                        </div>
                     </div>
 
-                    <button className="google-auth-btn" onClick={handleGoogleLogin}>
-                        <FcGoogle size={28} />
-                        <span>Sign in with Google</span>
-                    </button>
-
-                    <div className="mt-auto pt-4 text-white-50" style={{ fontSize: '0.7rem', letterSpacing: '2px' }}>
-                        &copy; 2026 INVENTURAX
+                    <div className="mt-auto pt-4 text-white-25" style={{ fontSize: '0.65rem', letterSpacing: '3px' }}>
+                        INVENTURAX CORE // SECURITY PROTOCOL
                     </div>
                 </div>
             </div>
