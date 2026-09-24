@@ -1,0 +1,44 @@
+# .mdignore — works just like .gitignore
+# Files and folders listed here will be excluded from codebase-export.md
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# Test & coverage
+coverage/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+__tests__/
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Config files you want to skip
+# *.config.js
+# vite.config.ts
